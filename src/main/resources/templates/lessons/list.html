@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title>수업 기록 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<div class="ins-nav">
+		<form class="search-bar" th:action="@{/lessons}" method="get">
+			<input type="search" name="q" th:value="${q}" placeholder="수강생·강사 이름 검색" autocomplete="off">
+			<button class="btn" type="submit">검색</button>
+			<a class="btn" th:if="${!q.isEmpty()}" th:href="@{/lessons}">✕ 닫기</a>
+		</form>
+		<span class="muted" th:text="|${lessons.size()}건 · 줄을 누르면 수정·삭제|">12건</span>
+	</div>
+
+	<table class="list clickable">
+		<thead>
+		<tr><th>날짜</th><th>교시</th><th>강의실</th><th>강사</th><th>수강생</th></tr>
+		</thead>
+		<tbody>
+		<tr th:each="l : ${lessons}" th:data-href="@{/lessons/{id}/edit(id=${l.id()}, back=${currentUrl})}"
+		    onclick="location.href = this.dataset.href">
+			<td><a th:href="@{/lessons/{id}/edit(id=${l.id()}, back=${currentUrl})}" th:text="${#temporals.format(l.date(), 'M/d (E)')}">11/2 (월)</a></td>
+			<td><span th:text="${l.period()} + '교시'">1교시</span>
+				<small class="muted" th:unless="${l.timeText().isEmpty()}" th:text="${l.timeText()}">13:20~14:40</small></td>
+			<td th:text="${l.roomName()}">203호</td>
+			<td th:text="${l.instructorName()}">김강사</td>
+			<td th:text="${#strings.listJoin(l.studentNames(), ', ')}">홍길동</td>
+		</tr>
+		<tr th:if="${lessons.isEmpty()}">
+			<td colspan="5" class="muted empty" th:text="${q.isEmpty()} ? '수업 기록이 없습니다.' : |&quot;${q}&quot; 검색 결과가 없습니다|">없음</td>
+		</tr>
+		</tbody>
+	</table>
+</main>
+</body>
+</html>

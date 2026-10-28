@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 수강생 선택: 이름으로 걸러 보기 + 체크박스 여러 개. students = StudentRow 목록, selectedIds = 미리 체크할 id -->
+<div th:fragment="picker(students, selectedIds)" class="picker">
+	<div class="picker-head">
+		<input type="search" class="picker-filter" placeholder="이름으로 찾기" autocomplete="off">
+		<span class="picker-summary muted"></span>
+	</div>
+	<div class="picker-list">
+		<label th:each="s : ${students}">
+			<input type="checkbox" name="studentIds" th:value="${s.id()}" th:checked="${selectedIds.contains(s.id())}"
+			       th:data-name="${s.name()}" th:data-hopes="${#strings.listJoin(s.hopeInstructorIds(), ',')}"
+			       th:data-hope-names="${#strings.listJoin(s.hopeInstructorNames(), ', ')}">
+			<span th:text="${s.name()}">홍길동</span>
+			<small class="muted" th:text="${s.visitCount()} + '회'">3회</small>
+		</label>
+		<p class="muted" th:if="${students.isEmpty()}">선택할 수강생이 없습니다. 수강생 탭에서 먼저 등록하세요.</p>
+	</div>
+</div>
+</body>
+</html>

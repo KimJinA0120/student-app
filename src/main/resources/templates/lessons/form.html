@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title th:text="${lessonId == null} ? '수업 기록 - 수강생 관리' : '수업 기록 수정 - 수강생 관리'">수업 기록</title>
+</head>
+<body>
+<main class="content">
+	<h2 class="day-title">
+		<span th:text="${lessonId == null} ? '수업 기록' : '수업 기록 수정'">수업 기록</span>
+		<span class="pill warn" th:if="${past}">지난 기록</span>
+	</h2>
+
+	<form id="lesson-form" class="stack-form lesson-form" method="post"
+	      th:action="${lessonId == null} ? @{/lessons} : @{/lessons/{id}(id=${lessonId})}"
+	      th:data-reload="${lessonId == null} ? @{/lessons/new} : @{/lessons/{id}/edit(id=${lessonId})}"
+	      th:data-past="${past}">
+		<input type="hidden" name="back" th:value="${lessonForm.back()}">
+
+		<div class="field-row">
+			<label>날짜 <input type="date" name="date" th:value="${lessonForm.date()}" required data-reload-on-change></label>
+			<label>교시
+				<select name="period" data-reload-on-change>
+					<option th:each="p : ${#numbers.sequence(1, 4)}" th:value="${p}" th:text="${p} + '교시'"
+					        th:selected="${p == lessonForm.period()}">1교시</option>
+				</select>
+			</label>
+			<label>시작 시각 <input type="time" name="startTime" th:value="${lessonForm.startTime()}"></label>
+			<label>종료 시각 <input type="time" name="endTime" th:value="${lessonForm.endTime()}"></label>
+		</div>
+		<small class="muted">시작·종료 시각은 비우면 교시 시간으로 봅니다. 날짜·교시를 바꾸면 강사·강의실 목록이 그 시점 기준으로 바뀝니다.</small>
+
+		<div class="field">
+			<span>수강생 <b class="req">*</b> <small class="muted">(여러 명이면 한 수업에 함께)</small></span>
+			<div th:replace="~{lessons/picker :: picker(${students}, ${selectedIds})}"></div>
+		</div>
+
+		<!-- 희망 강사 알림: 수강생 1명 + 희망 강사가 있을 때만 (지난 기록은 제외). 내용은 아래 스크립트가 채움 -->
+		<div id="hope-box" class="hope-box" hidden></div>
+
+		<div class="field-row">
+			<label>강사 <b class="req">*</b>
+				<select name="instructorId" id="instructor-select" required>
+					<option value="">-- 선택 --</option>
+					<option th:each="o : ${instructorOptions}" th:value="${o.id()}" th:text="${o.label()}"
+					        th:disabled="${o.disabled()}" th:selected="${o.id() == lessonForm.instructorId()}"
+					        th:data-free="${o.free()}" th:data-name="${o.name()}">김강사</option>
+				</select>
+				<small class="muted" th:text="${past} ? '지난 기록: 전체 강사' : '근무 중인 강사 (수업 중이면 선택 불가)'"></small>
+			</label>
+			<label>강의실 <b class="req">*</b>
+				<select name="roomId" required>
+					<option value="">-- 선택 --</option>
+					<option th:each="o : ${roomOptions}" th:value="${o.id()}" th:text="${o.label()}"
+					        th:disabled="${o.disabled()}" th:selected="${o.id() == lessonForm.roomId()}">203호</option>
+				</select>
+				<small class="muted" th:text="${noFreeRoom} ? '빈 교실이 없습니다' : '빈 교실을 배정 순서대로 자동 선택'"></small>
+			</label>
+		</div>
+
+		<div class="form-actions">
+			<button class="btn btn-primary" type="submit">저장</button>
+			<a class="btn" th:href="${lessonForm.back() != null and lessonForm.back().startsWith('/')} ? ${lessonForm.back()} : @{/lessons}">취소</a>
+		</div>
+	</form>
+
+	<form th:if="${lessonId != null}" class="danger-zone" th:action="@{/lessons/{id}/delete(id=${lessonId})}" method="post"
+	      onsubmit="return confirm('이 수업 기록을 삭제할까요?')">
+		<input type="hidden" name="back" value="/lessons">
+		<button class="btn btn-danger" type="submit">수업 기록 삭제</button>
+	</form>
+
+	<script th:src="@{/js/picker.js}"></script>
+	<script th:src="@{/js/lesson-form.js}"></script>
+</main>
+</body>
+</html>

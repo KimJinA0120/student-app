@@ -18,11 +18,6 @@ public class PageController {
 		return placeholder(model, "managers", "운영 매니저");
 	}
 
-	@GetMapping("/lessons")
-	public String lessons(Model model) {
-		return placeholder(model, "lessons", "수업 기록");
-	}
-
 	private String placeholder(Model model, String tab, String title) {
 		model.addAttribute("activeTab", tab);
 		model.addAttribute("title", title);

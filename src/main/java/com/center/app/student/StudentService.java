@@ -41,7 +41,12 @@ public class StudentService {
 		Map<Long, Long> visits = visitCounts();
 		return studentRepository.findAllWithHopes().stream()
 			.filter(s -> q.isEmpty() || s.getName().contains(q))
-			.map(s -> new StudentRow(s.getId(), s.getName(), visits.getOrDefault(s.getId(), 0L), hopeNames(s)))
+			.map(s -> {
+				List<Instructor> hopes = s.getHopeInstructors().stream()
+					.sorted(Comparator.comparing(Instructor::getName)).toList();
+				return new StudentRow(s.getId(), s.getName(), visits.getOrDefault(s.getId(), 0L),
+					hopes.stream().map(Instructor::getName).toList(), hopes.stream().map(Instructor::getId).toList());
+			})
 			.toList();
 	}
 
@@ -93,10 +98,6 @@ public class StudentService {
 	private Map<Long, Long> visitCounts() {
 		return lessonRepository.countByStudent().stream()
 			.collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
-	}
-
-	private List<String> hopeNames(Student s) {
-		return s.getHopeInstructors().stream().map(Instructor::getName).sorted().toList();
 	}
 
 	private Student find(Long id) {

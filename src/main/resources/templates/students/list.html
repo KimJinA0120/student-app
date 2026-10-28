@@ -19,7 +19,9 @@
 		</div>
 		<a class="btn" th:href="@{/students/new}">+ 수강생 등록</a>
 	</div>
-	<form id="start-form" th:action="@{/lessons/new}" method="get"></form>
+	<form id="start-form" th:action="@{/lessons/new}" method="get">
+		<input type="hidden" name="back" th:value="${currentUrl}">
+	</form>
 
 	<table class="list">
 		<thead>

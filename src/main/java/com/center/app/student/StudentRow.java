@@ -7,6 +7,7 @@ public record StudentRow(
 	Long id,
 	String name,
 	long visitCount,
-	List<String> hopeInstructorNames
+	List<String> hopeInstructorNames,  // 이름순
+	List<Long> hopeInstructorIds       // 수업 기록 폼의 희망 강사 알림용
 ) {
 }

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title>수강생 추가 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<h2 class="day-title">수업에 수강생 추가</h2>
+	<p>
+		<b th:text="${lesson.instructor.name}">김강사</b> 강사님 ·
+		<span th:text="${lesson.room.name}">203호</span> ·
+		<span th:text="${#temporals.format(lesson.lessonDate, 'M/d (E)')} + ' ' + ${lesson.period} + '교시'">11/2 (월) 1교시</span>
+		<br><span class="muted" th:text="'지금 수강생: ' + ${#strings.listJoin(lesson.students.![name], ', ')}">지금 수강생</span>
+	</p>
+	<form class="stack-form" th:action="@{/lessons/{id}/students(id=${lesson.id})}" method="post">
+		<input type="hidden" name="back" th:value="${back}">
+		<div th:replace="~{lessons/picker :: picker(${students}, ${selectedIds})}"></div>
+		<div class="form-actions">
+			<button class="btn btn-primary" type="submit">추가</button>
+			<a class="btn" th:href="${back}">취소</a>
+		</div>
+	</form>
+	<script th:src="@{/js/picker.js}"></script>
+</main>
+</body>
+</html>

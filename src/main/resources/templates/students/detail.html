@@ -9,7 +9,7 @@
 	<div class="ins-nav">
 		<a class="btn" th:href="@{/students}">‹ 목록</a>
 		<div class="modes">
-			<a class="btn btn-primary" th:href="@{/lessons/new(studentIds=${student.id})}">수업시작</a>
+			<a class="btn btn-primary" th:href="@{/lessons/new(studentIds=${student.id}, back=${currentUrl})}">수업시작</a>
 			<a class="btn" th:href="@{/students/{id}/edit(id=${student.id})}">수정</a>
 			<form th:action="@{/students/{id}/delete(id=${student.id})}" method="post"
 			      onsubmit="return confirm('수강생을 삭제할까요?')">
@@ -44,7 +44,7 @@
 			</thead>
 			<tbody>
 			<tr th:each="l : ${lessons}">
-				<td><a th:href="@{/lessons/{id}/edit(id=${l.lessonId()})}" th:text="${#temporals.format(l.date(), 'M/d (E)')}">11/2 (월)</a></td>
+				<td><a th:href="@{/lessons/{id}/edit(id=${l.lessonId()}, back=${currentUrl})}" th:text="${#temporals.format(l.date(), 'M/d (E)')}">11/2 (월)</a></td>
 				<td th:text="${l.period()} + '교시'">1교시</td>
 				<td th:text="${l.instructorName()}">김강사</td>
 			</tr>
