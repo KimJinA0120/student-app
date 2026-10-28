@@ -58,4 +58,6 @@ tasks.named('compileJava') {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// 테스트 DB는 매번 새로 만듦 (이전 실행이 남긴 파일 상태에 영향받지 않도록)
+	doFirst { delete 'build/testdb' }
 }
