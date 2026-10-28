@@ -1,7 +1,9 @@
 package com.center.app.instructor;
 
+import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -25,6 +27,8 @@ public class InstructorService {
 	private final InstructorRepository instructorRepository;
 	private final InstructorOverrideRepository overrideRepository;
 	private final LessonRepository lessonRepository;
+	private final InstructorDayStatusRepository dayStatusRepository;
+	private final Clock clock;
 
 	// 기본 배치 한 칸 (요일·교시·역할·비고)
 	public record SlotInput(DayOfWeek dayOfWeek, int period, InstructorRole role, String note) {
@@ -108,6 +112,31 @@ public class InstructorService {
 			.filter(found -> found.getInstructor().getId().equals(instructorId))
 			.orElseThrow(() -> new IllegalArgumentException("예외를 찾을 수 없습니다: " + overrideId));
 		overrideRepository.delete(o);
+	}
+
+	// 휴식·외출·조퇴 (근무 중인 강사 패널의 버튼). 강사·날짜당 1행이라 이미 있으면 같은 행을 갱신 (휴식 중 조퇴 등)
+	public void changeDayStatus(Long instructorId, LocalDate date, DayStatus status, Integer fromPeriod) {
+		if (status == null || date == null || fromPeriod == null || !PeriodUtil.isValid(fromPeriod)) {
+			throw new IllegalArgumentException("상태·날짜·교시를 확인하세요.");
+		}
+		Instructor instructor = find(instructorId);
+		LocalDateTime now = LocalDateTime.now(clock);
+		dayStatusRepository.findByInstructorIdAndStatusDate(instructorId, date).ifPresentOrElse(s -> {
+			if (s.getStatus() == DayStatus.LEAVE_EARLY) {
+				throw new IllegalArgumentException(instructor.getName() + " 강사님은 이미 조퇴 처리되었습니다.");
+			}
+			s.change(status, fromPeriod, now);
+		}, () -> dayStatusRepository.save(new InstructorDayStatus(instructor, date, status, fromPeriod, now)));
+	}
+
+	// [복귀]: 휴식·외출 행을 지움. 조퇴는 그날 남은 교시에서 빠지는 것이라 복귀 대상이 아님
+	public void returnToWork(Long instructorId, LocalDate date) {
+		InstructorDayStatus s = dayStatusRepository.findByInstructorIdAndStatusDate(instructorId, date)
+			.orElseThrow(() -> new IllegalArgumentException("휴식·외출 중이 아닙니다."));
+		if (s.getStatus() == DayStatus.LEAVE_EARLY) {
+			throw new IllegalArgumentException("조퇴한 강사는 복귀할 수 없습니다.");
+		}
+		dayStatusRepository.delete(s);
 	}
 
 	private Instructor find(Long id) {

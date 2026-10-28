@@ -22,11 +22,17 @@ public record RefPoint(LocalDate date, int period, LocalTime time, boolean now) 
 			return new RefPoint(d, PeriodUtil.of(time), time, false);
 		}
 		int currentPeriod = PeriodUtil.of(nowTime);
-		int p = period != null && PeriodUtil.isValid(period) ? period : currentPeriod;
+		boolean periodGiven = period != null && PeriodUtil.isValid(period);
+		int p = periodGiven ? period : currentPeriod;
 		if (d.equals(today) && p == currentPeriod) {
-			return new RefPoint(d, p, nowTime, date == null && period == null);
+			return new RefPoint(d, p, nowTime, date == null && !periodGiven);
 		}
 		return new RefPoint(d, p, PeriodUtil.start(p), false);
+	}
+
+	// "13:00~15:30"
+	public String periodText() {
+		return PeriodUtil.start(period) + "~" + PeriodUtil.end(period);
 	}
 
 	// 교시가 끝난 뒤 = 지난 기록 (강사·교실 중복은 경고만, 강사는 전체에서 선택)
