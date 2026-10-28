@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<!--
+  공통 레이아웃: 각 페이지는 아래처럼 자기 <title>과 <main>을 넘겨서 사용
+  <html th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+-->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(pageTitle, pageContent)">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title th:replace="${pageTitle}">수강생 관리</title>
+	<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+	<div class="topbar-row">
+		<strong class="brand">안양 상설센터</strong>
+		<a class="btn btn-primary" th:href="@{/lessons/new}">수업 기록</a>
+	</div>
+	<!-- 근무 중인 강사 패널 (6단계에서 구현) -->
+	<section class="working-panel">
+		<p class="muted">근무 중인 강사 패널 자리</p>
+	</section>
+	<nav class="tabs">
+		<a th:href="@{/instructors}" th:classappend="${activeTab == 'instructors'} ? 'active'">강사</a>
+		<a th:href="@{/students}" th:classappend="${activeTab == 'students'} ? 'active'">수강생</a>
+		<a th:href="@{/managers}" th:classappend="${activeTab == 'managers'} ? 'active'">운영 매니저</a>
+		<a th:href="@{/lessons}" th:classappend="${activeTab == 'lessons'} ? 'active'">수업 기록</a>
+	</nav>
+</header>
+<div class="body">
+	<div class="content" th:replace="${pageContent}">본문</div>
+	<!-- 확인 필요 사이드 패널 (7단계에서 구현) -->
+	<aside class="sidebar">
+		<h2>확인 필요</h2>
+		<p class="muted">목록 자리</p>
+	</aside>
+</div>
+</body>
+</html>

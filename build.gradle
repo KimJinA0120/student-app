@@ -1,0 +1,61 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.1.2'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.center'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+ext {
+	mapstructVersion = '1.6.3'
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-h2console'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'com.h2database:h2'
+	// 순서 주의: Lombok이 getter를 만든 뒤 MapStruct가 매퍼를 생성해야 함 (binding이 둘을 연결)
+	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+	annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-thymeleaf-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testCompileOnly 'org.projectlombok:lombok'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+// 배포 파일 이름을 app.jar로 고정 (서버 PC의 start.bat과 맞춤)
+tasks.named('bootJar') {
+	archiveFileName = 'app.jar'
+}
+
+// MapStruct: 매퍼를 스프링 빈으로 생성, 매핑 안 된 필드는 컴파일 오류로 알림
+tasks.named('compileJava') {
+	options.compilerArgs += [
+		'-Amapstruct.defaultComponentModel=spring',
+		'-Amapstruct.unmappedTargetPolicy=ERROR'
+	]
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
