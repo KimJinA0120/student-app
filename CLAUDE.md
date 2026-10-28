@@ -31,6 +31,7 @@
 - `ddl-auto=update` 사용, **`create` 금지**
 - 운영 시작 후 Spring Boot·H2 버전 올리지 말 것 (H2 파일 형식 호환)
 - enum은 전부 `@Enumerated(EnumType.STRING)`, 요일은 `java.time.DayOfWeek` STRING
+  - 컬럼에는 `@Column(columnDefinition = "varchar(N)")` 지정 (안 하면 H2 ENUM 타입/`IN(...)` CHECK가 생겨 enum 값 추가 시 저장 실패)
 - 모든 엔티티는 `BaseEntity`(`created_at`, `updated_at`, JPA Auditing) 상속
 - 근무 인원·진행 중 수업·빈 교실·방문 회차 등 **계산 값은 DB에 저장하지 않음** → 날짜 범위로 조회 후 Java에서 계산
 - 강사·교실 중복 수업 검사는 DB 제약이 아니라 **서비스 계층**에서

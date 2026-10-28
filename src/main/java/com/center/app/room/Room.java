@@ -24,8 +24,10 @@ public class Room extends BaseEntity {
 	@Column(nullable = false, unique = true, length = 30)
 	private String name;
 
+	// enum 컬럼은 columnDefinition으로 varchar 지정: 안 하면 H2에서 ENUM 타입이나 IN(...) CHECK가 생겨
+	// 나중에 enum 값을 추가해도 ddl-auto=update가 바꿔 주지 않아 저장이 실패함
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 20)
+	@Column(nullable = false, columnDefinition = "varchar(20)")
 	private RoomType type;
 
 	// 자동 배정 순서 (작을수록 먼저)
