@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.center.app.common.PeriodUtil;
@@ -31,7 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 // 강사 관리: 강사 등록·수정·삭제, 기본 배치, 날짜별 예외
-// 저장 후에는 항상 redirect (새로고침해도 같은 요청이 다시 전송되지 않도록: Post-Redirect-Get)
+// 저장 후에는 항상 redirect (Flash.handle 참고)
 @Controller
 @RequestMapping("/instructors")
 @RequiredArgsConstructor
@@ -64,7 +63,7 @@ public class InstructorManageController {
 	@PostMapping
 	public String create(@RequestParam String name, @RequestParam(required = false) String phone,
 			RedirectAttributes ra) {
-		return handle(ra, "/instructors/manage", () -> {
+		return Flash.handle(ra, "/instructors/manage", () -> {
 			Long id = instructorService.create(name, phone);
 			ra.addFlashAttribute("message", "강사를 등록했습니다. 기본 배치를 입력하세요.");
 			return "/instructors/" + id;
@@ -90,7 +89,7 @@ public class InstructorManageController {
 	@PostMapping("/{id:\\d+}")
 	public String update(@PathVariable Long id, @RequestParam String name,
 			@RequestParam(required = false) String phone, RedirectAttributes ra) {
-		return handle(ra, "/instructors/" + id, () -> {
+		return Flash.handle(ra, "/instructors/" + id, () -> {
 			instructorService.update(id, name, phone);
 			ra.addFlashAttribute("message", "저장했습니다.");
 			return "/instructors/" + id;
@@ -99,7 +98,7 @@ public class InstructorManageController {
 
 	@PostMapping("/{id:\\d+}/delete")
 	public String delete(@PathVariable Long id, RedirectAttributes ra) {
-		return handle(ra, "/instructors/" + id, () -> {
+		return Flash.handle(ra, "/instructors/" + id, () -> {
 			instructorService.delete(id);
 			ra.addFlashAttribute("message", "삭제했습니다.");
 			return "/instructors/manage";
@@ -119,7 +118,7 @@ public class InstructorManageController {
 				}
 			}
 		}
-		return handle(ra, "/instructors/" + id, () -> {
+		return Flash.handle(ra, "/instructors/" + id, () -> {
 			instructorService.replaceSlots(id, slots);
 			ra.addFlashAttribute("message", "기본 배치를 저장했습니다.");
 			return "/instructors/" + id;
@@ -133,7 +132,7 @@ public class InstructorManageController {
 			ra.addFlashAttribute("error", "입력 형식이 올바르지 않습니다. 날짜를 확인하세요.");
 			return "redirect:/instructors/" + id;
 		}
-		return handle(ra, "/instructors/" + id, () -> {
+		return Flash.handle(ra, "/instructors/" + id, () -> {
 			instructorService.addOverride(id, form.type(), form.startDate(), form.endDate(), form.periods(),
 				form.role(), form.memo());
 			ra.addFlashAttribute("message", "예외를 추가했습니다.");
@@ -143,21 +142,10 @@ public class InstructorManageController {
 
 	@PostMapping("/{id:\\d+}/overrides/{overrideId:\\d+}/delete")
 	public String deleteOverride(@PathVariable Long id, @PathVariable Long overrideId, RedirectAttributes ra) {
-		return handle(ra, "/instructors/" + id, () -> {
+		return Flash.handle(ra, "/instructors/" + id, () -> {
 			instructorService.deleteOverride(id, overrideId);
 			ra.addFlashAttribute("message", "예외를 삭제했습니다.");
 			return "/instructors/" + id;
 		});
-	}
-
-	// 서비스의 입력 오류 메시지를 화면 위쪽에 띄우고 원래 화면으로 돌려보냄
-	// action은 성공 시 이동할 주소를 돌려줌
-	private String handle(RedirectAttributes ra, String backTo, Supplier<String> action) {
-		try {
-			return "redirect:" + action.get();
-		} catch (IllegalArgumentException e) {
-			ra.addFlashAttribute("error", e.getMessage());
-			return "redirect:" + backTo;
-		}
 	}
 }

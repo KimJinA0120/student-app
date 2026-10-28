@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title th:text="${studentId == null} ? '수강생 등록 - 수강생 관리' : '수강생 수정 - 수강생 관리'">수강생 등록</title>
+</head>
+<body>
+<main class="content">
+	<div class="ins-nav">
+		<a class="btn" th:href="${studentId == null} ? @{/students} : @{/students/{id}(id=${studentId})}">‹ 돌아가기</a>
+	</div>
+	<h2 class="day-title" th:text="${studentId == null} ? '수강생 등록' : '수강생 수정'">수강생 등록</h2>
+
+	<form class="stack-form" method="post"
+	      th:action="${studentId == null} ? @{/students} : @{/students/{id}(id=${studentId})}">
+		<label>성명 <b class="req">*</b> <input name="name" th:value="${form.name()}" required maxlength="30"></label>
+		<label>연락처 <input name="phone" th:value="${form.phone()}" placeholder="010-0000-0000" maxlength="20"></label>
+		<label>나이 <input type="number" name="age" th:value="${form.age()}" min="0" max="150"></label>
+		<label>희망 수업 <input name="hopeClass" th:value="${form.hopeClass()}" placeholder="예: 스마트폰 기초" maxlength="100"></label>
+		<label>ID <input name="attendId" th:value="${form.attendId()}" placeholder="출석 사이트 아이디" maxlength="50"></label>
+		<label>수업 시작일 <input type="date" name="startDate" th:value="${form.startDate()}"></label>
+		<div class="field">
+			<span>희망 강사 <small class="muted">(선택, 여러 명 가능)</small></span>
+			<div class="check-grid">
+				<label th:each="i : ${instructors}">
+					<input type="checkbox" name="hopeInstructorIds" th:value="${i.id}"
+					       th:checked="${form.hopeInstructorIds() != null and form.hopeInstructorIds().contains(i.id)}">
+					<span th:text="${i.name}">김강사</span>
+				</label>
+			</div>
+		</div>
+		<label>비고 <textarea name="memo" rows="4" maxlength="2000" th:text="${form.memo()}"></textarea></label>
+		<div><button class="btn btn-primary" type="submit">저장</button></div>
+	</form>
+</main>
+</body>
+</html>

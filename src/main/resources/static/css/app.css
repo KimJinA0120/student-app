@@ -19,7 +19,9 @@ body { margin: 0; font-family: "Malgun Gothic", sans-serif; font-size: 14px; col
 
 /* 본문 + 오른쪽 사이드 패널 */
 .body { display: flex; }
-.content { flex: 1; padding: 16px; min-width: 0; }
+.main-col { flex: 1; min-width: 0; }
+.main-col > .flash { margin: 12px 16px 0; }
+.content { padding: 16px; }
 .sidebar { width: 280px; padding: 16px; border-left: 1px solid var(--line); }
 .sidebar h2 { margin-top: 0; font-size: 16px; }
 
@@ -90,6 +92,7 @@ table.schedule { border-collapse: collapse; width: 100%; max-width: 900px; }
 .name-link:hover { text-decoration: underline; }
 .flash { padding: 8px 12px; border-radius: 4px; margin: 0 0 12px; }
 .flash.ok { background: var(--ok-bg); color: var(--ok); }
+.flash.warn { background: var(--cond-bg); color: var(--cond-text); }
 .flash.error { background: var(--warn-bg); color: var(--warn); font-weight: bold; }
 .inline-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
 .inline-form input:not([type=checkbox]), .inline-form select, .slot-grid input, .slot-grid select { padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; font: inherit; }
@@ -106,3 +109,19 @@ table.slot-grid { border-collapse: collapse; margin-bottom: 8px; }
 .slot-grid td.on { background: var(--ok-bg); }
 .slot-grid select, .slot-grid input { width: 100%; }
 .slot-grid input { margin-top: 2px; font-size: 12px; }
+
+/* ── 수강생 탭 ── */
+.check-col { width: 32px; }
+.list input[type=checkbox] { width: 16px; height: 16px; }
+table.info { border-collapse: collapse; }
+.info th, .info td { padding: 6px 12px 6px 0; text-align: left; vertical-align: top; border-bottom: 1px solid #f0f0f0; }
+.info th { width: 100px; font-weight: normal; color: var(--muted); }
+.info .tel { margin-left: 0; }
+.pre { white-space: pre-wrap; }
+.req { color: var(--warn); }
+.stack-form { display: flex; flex-direction: column; gap: 12px; max-width: 600px; }
+.stack-form label, .stack-form .field { display: flex; flex-direction: column; gap: 4px; }
+.stack-form input:not([type=checkbox]), .stack-form select, .stack-form textarea { padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; font: inherit; }
+.check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 4px; padding: 8px; border: 1px solid var(--line); border-radius: 4px; max-height: 220px; overflow-y: auto; }
+.stack-form .check-grid label { flex-direction: row; align-items: center; gap: 4px; }
+.day-title .pill { vertical-align: middle; margin-left: 8px; }

@@ -15,10 +15,5 @@
 	</div>
 </div>
 
-<!-- 저장 결과·입력 오류 안내 (redirect 후 한 번만 보이는 flash 값) -->
-<th:block th:fragment="flash">
-	<p class="flash ok" th:if="${message}" th:text="${message}">저장했습니다.</p>
-	<p class="flash error" th:if="${error}" th:text="${error}">오류</p>
-</th:block>
 </body>
 </html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title>수강생 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<!-- 이름 검색 + [수업시작]: 체크한 수강생이 채워진 수업 기록 폼을 엶 (여러 명이면 한 수업에 함께) -->
+	<div class="ins-nav">
+		<div class="search-bar">
+			<form class="search-bar" th:action="@{/students}" method="get">
+				<input type="search" name="q" th:value="${q}" placeholder="이름 검색" autocomplete="off">
+				<button class="btn" type="submit">검색</button>
+				<a class="btn" th:if="${!q.isEmpty()}" th:href="@{/students}">✕ 닫기</a>
+			</form>
+			<button class="btn btn-primary" type="submit" form="start-form"
+			        onclick="if (!document.querySelector('input[form=start-form]:checked')) { alert('수강생을 선택하세요.'); return false; }">수업시작</button>
+		</div>
+		<a class="btn" th:href="@{/students/new}">+ 수강생 등록</a>
+	</div>
+	<form id="start-form" th:action="@{/lessons/new}" method="get"></form>
+
+	<table class="list">
+		<thead>
+		<tr><th class="check-col"></th><th>이름</th><th>방문 회차</th><th>희망 강사</th></tr>
+		</thead>
+		<tbody>
+		<tr th:each="s : ${students}">
+			<td class="check-col"><input type="checkbox" name="studentIds" form="start-form" th:value="${s.id()}"
+			                             th:aria-label="${s.name()} + ' 선택'"></td>
+			<td><a class="name-link" th:href="@{/students/{id}(id=${s.id()})}"><b th:text="${s.name()}">홍길동</b></a></td>
+			<td th:text="${s.visitCount()} + '회'">3회</td>
+			<td th:text="${#strings.listJoin(s.hopeInstructorNames(), ', ')}">김강사</td>
+		</tr>
+		<tr th:if="${students.isEmpty()}">
+			<td colspan="4" class="muted empty" th:text="${q.isEmpty()} ? '등록된 수강생이 없습니다.' : |&quot;${q}&quot; 이름을 찾을 수 없습니다|">없음</td>
+		</tr>
+		</tbody>
+	</table>
+</main>
+</body>
+</html>

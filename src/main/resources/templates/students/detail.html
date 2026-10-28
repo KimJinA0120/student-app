@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title th:text="${student.name} + ' - 수강생'">수강생 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<div class="ins-nav">
+		<a class="btn" th:href="@{/students}">‹ 목록</a>
+		<div class="modes">
+			<a class="btn btn-primary" th:href="@{/lessons/new(studentIds=${student.id})}">수업시작</a>
+			<a class="btn" th:href="@{/students/{id}/edit(id=${student.id})}">수정</a>
+			<form th:action="@{/students/{id}/delete(id=${student.id})}" method="post"
+			      onsubmit="return confirm('수강생을 삭제할까요?')">
+				<button class="btn btn-danger" type="submit">삭제</button>
+			</form>
+		</div>
+	</div>
+
+	<h2 class="day-title">
+		<span th:text="${student.name}">홍길동</span>
+		<span class="pill ok" th:text="|방문 ${visitCount}회|">방문 3회</span>
+	</h2>
+
+	<section class="edit-section">
+		<table class="info">
+			<tr><th>연락처</th><td><a class="tel" th:if="${student.phone != null}"
+			                         th:href="|tel:${#strings.replace(student.phone, '-', '')}|" th:text="${student.phone}">010-0000-0000</a></td></tr>
+			<tr><th>나이</th><td th:text="${student.age}">70</td></tr>
+			<tr><th>희망 수업</th><td th:text="${student.hopeClass}">스마트폰 기초</td></tr>
+			<tr><th>ID</th><td th:text="${student.attendId}">hong01</td></tr>
+			<tr><th>수업 시작일</th><td th:text="${student.startDate == null} ? '' : ${#temporals.format(student.startDate, 'yyyy-MM-dd (E)')}">2026-11-02 (월)</td></tr>
+			<tr><th>희망 강사</th><td th:text="${#strings.listJoin(student.hopeInstructors.![name], ', ')}">김강사</td></tr>
+			<tr><th>비고</th><td class="pre" th:text="${student.memo}">비고</td></tr>
+		</table>
+	</section>
+
+	<section class="edit-section">
+		<h3>들은 수업 (최근순)</h3>
+		<table class="list">
+			<thead>
+			<tr><th>날짜</th><th>교시</th><th>강사</th></tr>
+			</thead>
+			<tbody>
+			<tr th:each="l : ${lessons}">
+				<td><a th:href="@{/lessons/{id}/edit(id=${l.lessonId()})}" th:text="${#temporals.format(l.date(), 'M/d (E)')}">11/2 (월)</a></td>
+				<td th:text="${l.period()} + '교시'">1교시</td>
+				<td th:text="${l.instructorName()}">김강사</td>
+			</tr>
+			<tr th:if="${lessons.isEmpty()}"><td colspan="3" class="muted empty">아직 수업 기록이 없습니다.</td></tr>
+			</tbody>
+		</table>
+	</section>
+</main>
+</body>
+</html>

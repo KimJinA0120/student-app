@@ -5,10 +5,15 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
+import com.center.app.common.Inputs;
 import com.center.app.common.PeriodUtil;
+import com.center.app.lesson.LessonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static com.center.app.common.Inputs.blankToNull;
+import static com.center.app.common.Inputs.limit;
 
 // 강사 정보·기본 배치·날짜별 예외 등록/수정/삭제
 // 입력 오류는 IllegalArgumentException(한국어 메시지)으로 알리고, 컨트롤러가 화면에 보여 줌
@@ -19,6 +24,7 @@ public class InstructorService {
 
 	private final InstructorRepository instructorRepository;
 	private final InstructorOverrideRepository overrideRepository;
+	private final LessonRepository lessonRepository;
 
 	// 기본 배치 한 칸 (요일·교시·역할·비고)
 	public record SlotInput(DayOfWeek dayOfWeek, int period, InstructorRole role, String note) {
@@ -50,9 +56,14 @@ public class InstructorService {
 	}
 
 	// 기본 배치는 엔티티 cascade로, 예외·당일 상태는 DB의 ON DELETE CASCADE로 함께 삭제됨
-	// TODO 5단계: 수업 기록이 있는 강사는 삭제 불가 안내
+	// 수업 기록은 남겨야 하므로 기록이 있는 강사는 삭제하지 않음
 	public void delete(Long id) {
-		instructorRepository.delete(find(id));
+		Instructor instructor = find(id);
+		if (lessonRepository.existsByInstructorId(id)) {
+			throw new IllegalArgumentException("수업 기록이 있는 강사는 삭제할 수 없습니다. 수업 기록을 먼저 정리하세요.");
+		}
+		instructorRepository.deleteHopeLinks(id);
+		instructorRepository.delete(instructor);
 	}
 
 	// 기본 배치 전체를 화면에서 받은 내용으로 교체
@@ -113,17 +124,6 @@ public class InstructorService {
 	}
 
 	private String validPhone(String phone) {
-		return limit(blankToNull(phone), 20, "연락처");
-	}
-
-	private String limit(String value, int max, String label) {
-		if (value != null && value.length() > max) {
-			throw new IllegalArgumentException(label + "은(는) " + max + "자까지 입력할 수 있습니다.");
-		}
-		return value;
-	}
-
-	private String blankToNull(String value) {
-		return value == null || value.isBlank() ? null : value.trim();
+		return Inputs.optional(phone, 20, "연락처");
 	}
 }
