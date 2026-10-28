@@ -45,4 +45,10 @@ public class CheckItem extends BaseEntity {
 		this.resolved = true;
 		this.resolvedAt = now;
 	}
+
+	// 잘못 체크한 항목을 남은 목록으로 되돌림
+	public void reopen() {
+		this.resolved = false;
+		this.resolvedAt = null;
+	}
 }

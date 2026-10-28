@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import static com.center.app.common.Inputs.optional;
 import static com.center.app.common.Inputs.required;
 
-// 확인 필요 목록: 등록 / 해결 체크(목록에서 빠짐) / 잘못 쓴 항목 삭제
-// 내용 수정·해결 항목 되돌리기는 두지 않음 (요구사항: 해결 체크 후 새로 작성)
+// 확인 필요 목록: 등록 / 해결 체크(목록에서 빠짐) / 해결된 항목 보기·되돌리기 / 잘못 쓴 항목 삭제
+// 내용 수정은 두지 않음 (요구사항: 해결 체크 후 새로 작성)
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -26,12 +26,21 @@ public class CheckItemService {
 		return repository.findByResolvedFalseOrderByIdAsc();
 	}
 
+	@Transactional(readOnly = true)
+	public List<CheckItem> resolved() {
+		return repository.findByResolvedTrueOrderByResolvedAtDescIdDesc();
+	}
+
 	public void add(String content, String personName) {
 		repository.save(new CheckItem(required(content, 500, "내용"), optional(personName, 30, "이름")));
 	}
 
 	public void resolve(Long id) {
 		find(id).resolve(LocalDateTime.now(clock));
+	}
+
+	public void reopen(Long id) {
+		find(id).reopen();
 	}
 
 	public void delete(Long id) {

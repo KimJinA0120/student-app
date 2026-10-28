@@ -3,6 +3,8 @@ package com.center.app.checkitem;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
+
 import com.center.app.common.FixedClockConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +43,23 @@ class CheckItemServiceTest {
 		CheckItem resolved = repository.findById(first.getId()).orElseThrow();
 		assertThat(resolved.isResolved()).isTrue();
 		assertThat(resolved.getResolvedAt()).isEqualTo(FixedClockConfig.NOW);
+	}
+
+	@Test
+	void 해결된_항목은_최근_해결순으로_보이고_되돌리면_남은_목록으로_돌아간다() {
+		service.add("첫 항목", null);
+		service.add("둘째 항목", null);
+		List<CheckItem> items = service.unresolved();
+		service.resolve(items.get(0).getId());
+		service.resolve(items.get(1).getId());
+
+		// 해결 시각이 같으면 나중에 적은 항목이 먼저
+		assertThat(service.resolved()).extracting(CheckItem::getContent).containsExactly("둘째 항목", "첫 항목");
+
+		service.reopen(items.get(0).getId());
+		assertThat(service.unresolved()).extracting(CheckItem::getContent).containsExactly("첫 항목");
+		assertThat(service.unresolved().getFirst().getResolvedAt()).isNull();
+		assertThat(service.resolved()).extracting(CheckItem::getContent).containsExactly("둘째 항목");
 	}
 
 	@Test

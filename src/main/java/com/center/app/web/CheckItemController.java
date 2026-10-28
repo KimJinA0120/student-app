@@ -36,6 +36,15 @@ public class CheckItemController {
 		});
 	}
 
+	@PostMapping("/{id:\\d+}/reopen")
+	public String reopen(@PathVariable Long id, @RequestParam(required = false) String back, RedirectAttributes ra) {
+		String to = Urls.safeBack(back, "/");
+		return Flash.handle(ra, to, () -> {
+			service.reopen(id);
+			return to;
+		});
+	}
+
 	@PostMapping("/{id:\\d+}/delete")
 	public String delete(@PathVariable Long id, @RequestParam(required = false) String back, RedirectAttributes ra) {
 		String to = Urls.safeBack(back, "/");

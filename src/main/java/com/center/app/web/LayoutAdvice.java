@@ -54,6 +54,7 @@ public class LayoutAdvice {
 		model.addAttribute("nowUrl", path + query(pageParams));
 
 		model.addAttribute("checkItems", checkItemService.unresolved());
+		model.addAttribute("resolvedCheckItems", checkItemService.resolved());
 	}
 
 	private static String query(List<Param> params) {

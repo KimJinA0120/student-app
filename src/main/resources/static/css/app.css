@@ -181,3 +181,8 @@ table.info { border-collapse: collapse; }
 /* ── 운영 매니저 탭 ── */
 .shift-chip { display: inline-block; margin: 0 4px 2px 0; padding: 1px 6px; border-radius: 4px; background: #f3f3f3; font-size: 12px; }
 .slot-grid input[type=time] { width: auto; }
+.resolved-panel { margin-top: 12px; }
+.resolved-panel summary { font-size: 14px; font-weight: normal; color: var(--muted); }
+.resolved-panel .check-text { color: var(--muted); }
+.resolved-panel .check-text small { display: block; }
+.btn-x { white-space: nowrap; }

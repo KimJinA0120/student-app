@@ -32,6 +32,24 @@
 			</li>
 			<li class="muted" th:if="${checkItems.isEmpty()}">남은 항목이 없습니다.</li>
 		</ul>
+
+		<!-- 해결된 항목: 기본은 접혀 있음, [되돌리기]로 남은 목록에 다시 넣음 -->
+		<details class="resolved-panel" th:unless="${resolvedCheckItems.isEmpty()}">
+			<summary th:text="|해결된 항목 (${resolvedCheckItems.size()})|">해결된 항목 (5)</summary>
+			<ul class="check-list">
+				<li th:each="c : ${resolvedCheckItems}">
+					<div class="check-text">
+						<b th:if="${c.personName != null}" th:text="${c.personName}">김강사</b>
+						<span th:text="${c.content}">확인한 내용</span>
+						<small class="muted" th:text="${#temporals.format(c.resolvedAt, 'M/d HH:mm')} + ' 해결'">11/2 14:00 해결</small>
+					</div>
+					<form th:action="@{/check-items/{id}/reopen(id=${c.id})}" method="post">
+						<input type="hidden" name="back" th:value="${currentUrl}">
+						<button class="btn-x" type="submit">되돌리기</button>
+					</form>
+				</li>
+			</ul>
+		</details>
 	</details>
 	<script>
 		(function () {
