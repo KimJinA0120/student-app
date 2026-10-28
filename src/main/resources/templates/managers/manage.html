@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title>매니저 관리 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<div th:replace="~{managers/nav :: nav('manage')}"></div>
+
+	<form class="inline-form" th:action="@{/managers}" method="post">
+		<b>새 매니저</b>
+		<input name="name" placeholder="이름" required maxlength="30">
+		<input name="phone" placeholder="010-0000-0000" maxlength="20">
+		<button class="btn btn-primary" type="submit">등록</button>
+	</form>
+
+	<table class="list">
+		<thead>
+		<tr><th>이름</th><th>연락처</th><th>기본 근무</th><th></th></tr>
+		</thead>
+		<tbody>
+		<tr th:each="m : ${managers}">
+			<td><a th:href="@{/managers/{id}(id=${m.id})}" th:text="${m.name}">김매니저</a></td>
+			<td th:text="${m.phone}">010-0000-0000</td>
+			<td>
+				<!-- 요일 순서대로 "월 09:00~18:00" -->
+				<span class="shift-chip" th:each="d, st : ${days}" th:if="${m.shiftOn(d) != null}"
+				      th:text="|${dayLabels[st.index]} ${m.shiftOn(d).startTime}~${m.shiftOn(d).endTime}|">월 09:00~18:00</span>
+			</td>
+			<td><a class="btn" th:href="@{/managers/{id}(id=${m.id})}">수정</a></td>
+		</tr>
+		<tr th:if="${managers.isEmpty()}"><td colspan="4" class="muted empty">등록된 매니저가 없습니다.</td></tr>
+		</tbody>
+	</table>
+</main>
+</body>
+</html>

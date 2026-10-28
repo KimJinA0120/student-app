@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import com.center.app.checkitem.CheckItemService;
 import com.center.app.lesson.PeriodBoardService;
 import com.center.app.lesson.RefPoint;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +29,7 @@ public class LayoutAdvice {
 	static final List<String> REF_PARAMS = List.of("refDate", "refPeriod", "refTime");
 
 	private final PeriodBoardService boardService;
+	private final CheckItemService checkItemService;
 	private final Clock clock;
 
 	public record Param(String name, String value) {
@@ -50,6 +52,8 @@ public class LayoutAdvice {
 		String path = "GET".equals(request.getMethod()) ? request.getRequestURI() : "/instructors";
 		model.addAttribute("refAction", path);
 		model.addAttribute("nowUrl", path + query(pageParams));
+
+		model.addAttribute("checkItems", checkItemService.unresolved());
 	}
 
 	private static String query(List<Param> params) {

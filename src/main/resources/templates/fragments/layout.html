@@ -32,11 +32,7 @@
 		<p class="flash error" th:if="${error}" th:text="${error}">오류</p>
 		<div class="content" th:replace="${pageContent}">본문</div>
 	</div>
-	<!-- 확인 필요 사이드 패널 (7단계에서 구현) -->
-	<aside class="sidebar">
-		<h2>확인 필요</h2>
-		<p class="muted">목록 자리</p>
-	</aside>
+	<aside th:replace="~{fragments/sidebar :: sidebar}"></aside>
 </div>
 </body>
 </html>

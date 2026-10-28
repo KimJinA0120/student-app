@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title th:text="${manager.name} + ' - 운영 매니저'">매니저 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<div th:replace="~{managers/nav :: nav('manage')}"></div>
+
+	<h2 class="day-title" th:text="${manager.name}">김매니저</h2>
+
+	<section class="edit-section">
+		<h3>매니저 정보</h3>
+		<form class="inline-form" th:action="@{/managers/{id}(id=${manager.id})}" method="post">
+			<label>이름 <input name="name" th:value="${manager.name}" required maxlength="30"></label>
+			<label>연락처 <input name="phone" th:value="${manager.phone}" placeholder="010-0000-0000" maxlength="20"></label>
+			<button class="btn btn-primary" type="submit">저장</button>
+		</form>
+		<form th:action="@{/managers/{id}/delete(id=${manager.id})}" method="post"
+		      onsubmit="return confirm('매니저를 삭제하면 기본 근무표와 예외도 모두 지워집니다. 삭제할까요?')">
+			<button class="btn btn-danger" type="submit">매니저 삭제</button>
+		</form>
+	</section>
+
+	<!-- 기본 근무표: 요일별 근무 시간. 비운 요일은 근무 없음 -->
+	<section class="edit-section">
+		<h3>기본 근무표</h3>
+		<form th:action="@{/managers/{id}/shifts(id=${manager.id})}" method="post">
+			<table class="slot-grid">
+				<thead>
+				<tr><th>요일</th><th>시작</th><th>종료</th></tr>
+				</thead>
+				<tbody>
+				<tr th:each="d, st : ${days}" th:with="s=${manager.shiftOn(d)}">
+					<th th:text="${dayLabels[st.index]}">월</th>
+					<td th:classappend="${s != null} ? 'on'"><input type="time" th:name="'start_' + ${d}" th:value="${s?.startTime}"></td>
+					<td th:classappend="${s != null} ? 'on'"><input type="time" th:name="'end_' + ${d}" th:value="${s?.endTime}"></td>
+				</tr>
+				</tbody>
+			</table>
+			<button class="btn btn-primary" type="submit">기본 근무표 저장</button>
+		</form>
+	</section>
+
+	<!-- 날짜별 예외: 휴무 / 시간 변경 (매니저·날짜당 1건) -->
+	<section class="edit-section">
+		<h3>예외</h3>
+		<form class="inline-form" th:action="@{/managers/{id}/exceptions(id=${manager.id})}" method="post">
+			<label>날짜 <input type="date" name="date" required></label>
+			<select name="type" required>
+				<option th:each="t : ${exceptionTypes}" th:value="${t}" th:text="${t.label}">휴무</option>
+			</select>
+			<label>시간 <input type="time" name="startTime" title="시간 변경일 때">~<input type="time" name="endTime" title="시간 변경일 때"></label>
+			<input name="memo" placeholder="메모" maxlength="500">
+			<button class="btn btn-primary" type="submit">추가</button>
+		</form>
+		<table class="list">
+			<thead>
+			<tr><th>날짜</th><th>내용</th><th>메모</th><th></th></tr>
+			</thead>
+			<tbody>
+			<tr th:each="e : ${exceptions}">
+				<td th:text="${#temporals.format(e.exceptionDate, 'M/d (E)')}">11/9 (월)</td>
+				<td th:text="${e.type.label} + (${e.startTime != null} ? ' ' + ${e.startTime} + '~' + ${e.endTime} : '')">휴무</td>
+				<td th:text="${e.memo}">메모</td>
+				<td>
+					<form th:action="@{/managers/{id}/exceptions/{eid}/delete(id=${manager.id}, eid=${e.id})}" method="post"
+					      onsubmit="return confirm('이 예외를 삭제할까요?')">
+						<button class="btn" type="submit">삭제</button>
+					</form>
+				</td>
+			</tr>
+			<tr th:if="${exceptions.isEmpty()}"><td colspan="4" class="muted empty">예외가 없습니다.</td></tr>
+			</tbody>
+		</table>
+	</section>
+</main>
+</body>
+</html>

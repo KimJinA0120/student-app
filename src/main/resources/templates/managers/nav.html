@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 운영 매니저 탭 공통 머리: 보기 전환. mode = 'day' | 'manage' -->
+<div th:fragment="nav(mode)" class="ins-nav">
+	<div class="modes">
+		<a class="btn" th:href="@{/managers}" th:classappend="${mode == 'day'} ? 'btn-primary'">날짜별</a>
+		<a class="btn" th:href="@{/managers/manage}" th:classappend="${mode == 'manage'} ? 'btn-primary'">매니저 관리</a>
+	</div>
+</div>
+</body>
+</html>

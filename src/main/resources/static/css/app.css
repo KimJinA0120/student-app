@@ -22,8 +22,7 @@ body { margin: 0; font-family: "Malgun Gothic", sans-serif; font-size: 14px; col
 .main-col { flex: 1; min-width: 0; }
 .main-col > .flash { margin: 12px 16px 0; }
 .content { padding: 16px; }
-.sidebar { width: 280px; padding: 16px; border-left: 1px solid var(--line); }
-.sidebar h2 { margin-top: 0; font-size: 16px; }
+.sidebar { width: 280px; flex-shrink: 0; padding: 16px; border-left: 1px solid var(--line); }
 
 .btn { display: inline-block; padding: 6px 12px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: #222; text-decoration: none; cursor: pointer; }
 .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
@@ -163,3 +162,22 @@ table.info { border-collapse: collapse; }
 .panel-list .state { font-size: 13px; font-weight: bold; color: var(--primary); }
 .panel-list li.away .state { color: var(--muted); }
 .panel-list .empty-row { border: 0; background: none; }
+
+/* ── 확인 필요 사이드 패널 (접으면 폭을 줄여 달력·표 화면 확보) ── */
+.sidebar:has(details:not([open])) { width: auto; }
+.sidebar summary { font-size: 16px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+.check-add { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.check-add input { padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; font: inherit; }
+.check-add button { align-self: flex-end; }
+.check-list { list-style: none; margin: 0; padding: 0; }
+.check-list li { display: flex; gap: 6px; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+.check-list form { margin: 0; }
+.check-list input[type=checkbox] { width: 16px; height: 16px; margin-top: 2px; cursor: pointer; }
+.check-text { flex: 1; word-break: break-all; }
+.check-text b { margin-right: 4px; }
+.btn-x { border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer; padding: 0; }
+.btn-x:hover { color: var(--warn); }
+
+/* ── 운영 매니저 탭 ── */
+.shift-chip { display: inline-block; margin: 0 4px 2px 0; padding: 1px 6px; border-radius: 4px; background: #f3f3f3; font-size: 12px; }
+.slot-grid input[type=time] { width: auto; }

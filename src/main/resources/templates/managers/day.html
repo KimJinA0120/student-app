@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title>운영 매니저 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<div th:replace="~{managers/nav :: nav('day')}"></div>
+
+	<!-- 주 이동 + 월~일 탭 + 날짜 선택 (강사 탭과 같은 모양) -->
+	<div class="week-nav">
+		<a class="btn" th:href="@{/managers(date=${date.minusWeeks(1)})}">‹ 이전 주</a>
+		<a th:each="d : ${week}" class="day-tab" th:href="@{/managers(date=${d})}"
+		   th:classappend="${d == date} ? 'active'"
+		   th:text="${#temporals.format(d, 'M/d E')}">11/2 월</a>
+		<a class="btn" th:href="@{/managers(date=${date.plusWeeks(1)})}">다음 주 ›</a>
+		<form th:action="@{/managers}" method="get">
+			<input type="date" name="date" th:value="${date}" onchange="this.form.submit()">
+		</form>
+	</div>
+
+	<h2 class="day-title" th:text="${#temporals.format(date, 'M월 d일 EEEE')}">11월 2일 월요일</h2>
+
+	<table class="list">
+		<thead>
+		<tr><th>근무자</th><th>근무 시간</th><th>연락처</th></tr>
+		</thead>
+		<tbody>
+		<tr th:each="w : ${day.working()}">
+			<td><a class="name-link" th:href="@{/managers/{id}(id=${w.managerId()})}"><b th:text="${w.name()}">김매니저</b></a></td>
+			<td><span th:text="|${w.startTime()}~${w.endTime()}|">09:00~18:00</span>
+				<span class="pill warn" th:if="${w.changed()}">시간 변경</span></td>
+			<td><a class="tel" th:if="${w.phone() != null}" th:href="|tel:${#strings.replace(w.phone(), '-', '')}|"
+			       th:text="${w.phone()}">010-0000-0000</a></td>
+		</tr>
+		<tr th:if="${day.working().isEmpty()}"><td colspan="3" class="muted empty">이 날짜에 근무하는 매니저가 없습니다.</td></tr>
+		</tbody>
+	</table>
+
+	<section class="day-notes" th:unless="${day.changes().isEmpty()}">
+		<div>
+			<h3>휴무 · 시간 변경</h3>
+			<ul>
+				<li th:each="c : ${day.changes()}">
+					<b th:text="${c.name()}">김매니저</b>
+					<span th:text="${c.type().label}">휴무</span>
+					<span th:if="${c.startTime() != null}" th:text="|${c.startTime()}~${c.endTime()}|">13:00~18:00</span>
+					<span class="muted" th:if="${c.memo() != null}" th:text="'· ' + ${c.memo()}">· 병원</span>
+				</li>
+			</ul>
+		</div>
+	</section>
+</main>
+</body>
+</html>

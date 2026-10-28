@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 확인 필요 사이드 패널: 접으면 "확인 필요 (3)"처럼 남은 개수만. 접힘 상태는 이 브라우저에만 기억 -->
+<aside th:fragment="sidebar" class="sidebar">
+	<details id="check-panel" open>
+		<summary th:text="|확인 필요 (${checkItems.size()})|">확인 필요 (3)</summary>
+
+		<form class="check-add" th:action="@{/check-items}" method="post">
+			<input type="hidden" name="back" th:value="${currentUrl}">
+			<input name="content" placeholder="확인할 내용" required maxlength="500">
+			<input name="personName" placeholder="관련 사람 (선택)" maxlength="30">
+			<button class="btn btn-sm btn-primary" type="submit">등록</button>
+		</form>
+
+		<ul class="check-list">
+			<li th:each="c : ${checkItems}">
+				<!-- 해결 체크 → 목록에서 빠짐 -->
+				<form th:action="@{/check-items/{id}/resolve(id=${c.id})}" method="post">
+					<input type="hidden" name="back" th:value="${currentUrl}">
+					<input type="checkbox" title="해결" aria-label="해결" onchange="this.form.submit()">
+				</form>
+				<div class="check-text">
+					<b th:if="${c.personName != null}" th:text="${c.personName}">김강사</b>
+					<span th:text="${c.content}">확인할 내용</span>
+				</div>
+				<form th:action="@{/check-items/{id}/delete(id=${c.id})}" method="post"
+				      onsubmit="return confirm('이 항목을 삭제할까요?')">
+					<input type="hidden" name="back" th:value="${currentUrl}">
+					<button class="btn-x" type="submit" title="삭제" aria-label="삭제">삭제</button>
+				</form>
+			</li>
+			<li class="muted" th:if="${checkItems.isEmpty()}">남은 항목이 없습니다.</li>
+		</ul>
+	</details>
+	<script>
+		(function () {
+			var panel = document.getElementById('check-panel');
+			try {
+				if (localStorage.getItem('checkPanelClosed') === '1') panel.open = false;
+			} catch (e) { /* 저장소를 못 쓰는 브라우저면 항상 펼침 */ }
+			panel.addEventListener('toggle', function () {
+				try { localStorage.setItem('checkPanelClosed', panel.open ? '0' : '1'); } catch (e) { }
+			});
+		})();
+	</script>
+</aside>
+</body>
+</html>
