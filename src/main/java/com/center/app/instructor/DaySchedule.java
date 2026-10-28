@@ -3,6 +3,7 @@ package com.center.app.instructor;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 // 하루치 강사 근무 계산 결과 (DB에 저장하지 않고 조회할 때마다 계산)
 // record: 값만 담는 불변 객체. 화면에 엔티티 대신 넘겨서 지연 로딩 문제를 피함
@@ -53,5 +54,11 @@ public record DaySchedule(
 		Set<Integer> periods,  // 빈 Set = 전 교시
 		String memo
 	) {
+
+		// "1·3교시", 전 교시면 빈 문자열
+		public String periodText() {
+			return periods.isEmpty() ? "" : periods.stream().map(String::valueOf)
+				.collect(Collectors.joining("·")) + "교시";
+		}
 	}
 }

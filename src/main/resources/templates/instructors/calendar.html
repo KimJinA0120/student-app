@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title>강사 전체 달력 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<div th:replace="~{instructors/nav :: nav('calendar')}"></div>
+
+	<p class="muted" th:text="|숫자 = 확정 인원 (초록 ${required}명 이상, 주황 부족) · 노란 점선 = 조건부 (인원 미포함) · 날짜를 누르면 날짜별 보기|">설명</p>
+
+	<div class="cal">
+		<div class="cal-head" th:each="w : ${ {'월','화','수','목','금','토','일'} }" th:text="${w}">월</div>
+		<th:block th:each="week : ${weeks}">
+			<th:block th:each="d : ${week}">
+				<div class="cal-cell blank" th:if="${d == null}"></div>
+				<a class="cal-cell" th:if="${d != null}" th:href="@{/instructors(date=${d.date()})}"
+				   th:classappend="${d.date().getDayOfWeek().getValue() >= 6} ? 'weekend'">
+					<div class="cal-date" th:text="${#temporals.format(d.date(), 'M/d')}">11/2</div>
+					<div class="cal-period" th:each="p : ${d.periods()}">
+						<em th:classappend="${p.isShort()} ? 'warn' : 'ok'" th:text="${p.count()}">8</em>
+						<div>
+							<span class="muted" th:text="${p.period()} + '교시'">1교시</span>
+							<span th:text="${#strings.listJoin(p.confirmed().![name()], ', ')}">이름들</span>
+							<span class="cond" th:each="c : ${p.conditional()}" th:text="${c.name()}">조건부</span>
+						</div>
+					</div>
+					<!-- 칸 아래에는 메모만 (메모 없는 결근은 날짜별 보기에서 확인) -->
+					<div class="cal-note" th:each="n : ${d.absences()}" th:if="${n.memo() != null}"
+					     th:text="|${n.name()} ${n.memo()}|">안지은 불가</div>
+					<div class="cal-note" th:each="n : ${d.notes()}" th:text="|${n.name()} ${n.memo() ?: ''}|">메모</div>
+				</a>
+			</th:block>
+		</th:block>
+	</div>
+</main>
+</body>
+</html>

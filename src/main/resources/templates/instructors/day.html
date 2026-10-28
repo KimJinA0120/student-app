@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title>강사 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<div th:replace="~{instructors/nav :: nav('day')}"></div>
+
+	<!-- 주 이동 + 월~일 탭 + 날짜 선택 -->
+	<div class="week-nav">
+		<a class="btn" th:href="@{/instructors(date=${date.minusWeeks(1)})}">‹ 이전 주</a>
+		<a th:each="d : ${week}" class="day-tab" th:href="@{/instructors(date=${d})}"
+		   th:classappend="${d == date} ? 'active'"
+		   th:text="${#temporals.format(d, 'M/d E')}">11/2 월</a>
+		<a class="btn" th:href="@{/instructors(date=${date.plusWeeks(1)})}">다음 주 ›</a>
+		<form th:action="@{/instructors}" method="get">
+			<input type="date" name="date" th:value="${date}" onchange="this.form.submit()">
+		</form>
+	</div>
+
+	<h2 class="day-title" th:text="${#temporals.format(date, 'M월 d일 EEEE')}">11월 2일 월요일</h2>
+
+	<table class="schedule">
+		<thead>
+		<tr>
+			<th class="name-col">강사</th>
+			<th th:each="p : ${day.periods()}">
+				<div><b th:text="${p.period()} + '교시'">1교시</b>
+					<span class="muted" th:text="${periodTimes[p.period() - 1]}">09:30~12:00</span></div>
+				<span class="pill" th:classappend="${p.isShort()} ? 'warn' : 'ok'"
+				      th:text="${p.isShort()} ? |총 ${p.count()}명 · 부족 ${p.shortage()}| : |총 ${p.count()}명|">총 6명 · 부족 2</span>
+			</th>
+		</tr>
+		</thead>
+		<tbody>
+		<tr th:each="r : ${rows}">
+			<td class="name-col">
+				<a class="name-link" th:href="@{/instructors/{id}(id=${r.instructorId()})}"><b th:text="${r.name()}">홍길동</b></a>
+				<small class="muted" th:text="${r.roles()}">주</small>
+				<a class="tel" th:if="${r.phone() != null}" th:href="|tel:${r.tel()}|" th:text="${r.phone()}">010-0000-0000</a>
+				<div class="memo" th:if="${r.memo() != null}" th:text="${r.memo()}">메모</div>
+			</td>
+			<td th:each="m : ${r.marks()}" class="mark">
+				<span th:if="${m.name() == 'CONFIRMED'}" class="dot">●</span>
+				<span th:if="${m.name() == 'CONDITIONAL'}" class="cond">조</span>
+			</td>
+		</tr>
+		<tr th:if="${rows.isEmpty()}">
+			<td colspan="5" class="muted empty">이 날짜에 근무하는 강사가 없습니다.</td>
+		</tr>
+		</tbody>
+	</table>
+
+	<!-- 그날 빠지는 강사와 메모 -->
+	<section class="day-notes" th:if="${!day.absences().isEmpty() or !day.notes().isEmpty()}">
+		<div th:unless="${day.absences().isEmpty()}">
+			<h3>빠지는 강사</h3>
+			<ul>
+				<li th:each="n : ${day.absences()}">
+					<b th:text="${n.name()}">홍길동</b>
+					<span th:text="${n.periodText().isEmpty()} ? '전 교시' : ${n.periodText()}">전 교시</span>
+					<span class="muted" th:if="${n.memo() != null}" th:text="'· ' + ${n.memo()}">· 병원</span>
+				</li>
+			</ul>
+		</div>
+		<div th:unless="${day.notes().isEmpty()}">
+			<h3>메모</h3>
+			<ul>
+				<li th:each="n : ${day.notes()}">
+					<b th:text="${n.name()}">홍길동</b>
+					<span class="muted" th:text="${n.periodText()}"></span>
+					<span th:text="${n.memo()}">1시간 늦음</span>
+				</li>
+			</ul>
+		</div>
+	</section>
+</main>
+</body>
+</html>

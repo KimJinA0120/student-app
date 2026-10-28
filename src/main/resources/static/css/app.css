@@ -26,3 +26,83 @@ body { margin: 0; font-family: "Malgun Gothic", sans-serif; font-size: 14px; col
 .btn { display: inline-block; padding: 6px 12px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: #222; text-decoration: none; cursor: pointer; }
 .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 .muted { color: var(--muted); }
+
+/* ── 강사 탭 ── */
+:root { --cond-bg: #fff4c7; --cond-line: #d4b24a; --cond-text: #8a6a00; --warn-bg: #fbe4da; --ok-bg: #d8eee4; }
+.ins-nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.search-bar { display: flex; gap: 4px; }
+.search-bar input { width: 240px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 4px; font: inherit; }
+.modes { display: flex; gap: 4px; }
+
+.week-nav { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 8px; }
+.day-tab { padding: 6px 10px; border: 1px solid var(--line); border-radius: 4px; text-decoration: none; color: #222; }
+.day-tab.active { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: bold; }
+.week-nav form { margin-left: 8px; }
+.day-title { font-size: 20px; margin: 12px 0 8px; }
+
+.pill { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: bold; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.warn { background: var(--warn-bg); color: var(--warn); }
+
+table.schedule { border-collapse: collapse; width: 100%; max-width: 900px; }
+.schedule th, .schedule td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: center; vertical-align: middle; }
+.schedule th { background: #fafafa; font-weight: normal; }
+.schedule .name-col { text-align: left; }
+.schedule .muted { font-size: 12px; margin-left: 2px; }
+.schedule .mark { width: 110px; }
+.dot { color: var(--ok); font-size: 16px; }
+.cond { display: inline-block; color: var(--cond-text); background: var(--cond-bg); border: 1px dashed var(--cond-line); border-radius: 4px; padding: 0 4px; }
+.tel { margin-left: 6px; color: var(--primary); text-decoration: none; font-size: 13px; }
+.memo { font-size: 12px; color: var(--warn); }
+.empty { padding: 16px; text-align: center; }
+
+.day-notes { display: flex; flex-wrap: wrap; gap: 32px; margin-top: 16px; }
+.day-notes h3 { font-size: 15px; margin: 0 0 4px; }
+.day-notes ul { margin: 0; padding-left: 18px; }
+
+/* 이름 검색 결과 */
+.card { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; max-width: 600px; }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0; font-size: 18px; }
+.date-line { display: flex; gap: 12px; padding: 6px 0; border-top: 1px solid #f0f0f0; }
+.date-line .date { min-width: 80px; font-weight: bold; color: #222; text-decoration: none; }
+.date-line.cond-only .date { color: var(--cond-text); }
+.date-line .memo { display: block; }
+.date-line .cond { margin-left: 4px; }
+
+/* 전체 달력 */
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal-head { text-align: center; font-weight: bold; padding: 4px 0; }
+.cal-cell { display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 6px; padding: 6px; font-size: 12px; color: #222; text-decoration: none; }
+.cal-cell:hover { border-color: var(--primary); }
+.cal-cell.blank { border: 0; background: #f5f5f5; }
+.cal-cell.weekend { background: #fbfaf6; }
+.cal-date { font-weight: bold; font-size: 14px; border-bottom: 1px solid #f0f0f0; padding-bottom: 2px; }
+.cal-period { display: grid; grid-template-columns: 22px 1fr; gap: 4px; line-height: 1.4; }
+.cal-period em { font-style: normal; font-weight: bold; color: #fff; border-radius: 4px; height: 17px; line-height: 17px; text-align: center; }
+.cal-period em.ok { background: var(--ok); }
+.cal-period em.warn { background: var(--warn); }
+.cal-period .cond { margin-left: 2px; font-size: 11px; }
+.cal-note { margin-top: auto; font-size: 11px; color: var(--warn); }
+
+/* 강사 관리 */
+.btn-danger { border-color: var(--warn); color: var(--warn); }
+.name-link { color: #222; text-decoration: none; }
+.name-link:hover { text-decoration: underline; }
+.flash { padding: 8px 12px; border-radius: 4px; margin: 0 0 12px; }
+.flash.ok { background: var(--ok-bg); color: var(--ok); }
+.flash.error { background: var(--warn-bg); color: var(--warn); font-weight: bold; }
+.inline-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.inline-form input:not([type=checkbox]), .inline-form select, .slot-grid input, .slot-grid select { padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; font: inherit; }
+.edit-section { margin-bottom: 28px; max-width: 1000px; }
+.edit-section h3 { font-size: 16px; margin: 0 0 8px; }
+table.list { border-collapse: collapse; width: 100%; max-width: 900px; }
+.list th, .list td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; }
+.list th { background: #fafafa; font-weight: normal; }
+.list form { margin: 0; }
+table.slot-grid { border-collapse: collapse; margin-bottom: 8px; }
+.slot-grid th, .slot-grid td { border: 1px solid var(--line); padding: 4px; text-align: center; }
+.slot-grid th { background: #fafafa; font-weight: normal; }
+.slot-grid td { width: 120px; }
+.slot-grid td.on { background: var(--ok-bg); }
+.slot-grid select, .slot-grid input { width: 100%; }
+.slot-grid input { margin-top: 2px; font-size: 12px; }

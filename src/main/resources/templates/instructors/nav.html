@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 강사 탭 공통 머리: 이름 검색 + 보기 전환. mode = 'day' | 'calendar' | 'search' | 'manage' -->
+<div th:fragment="nav(mode)" class="ins-nav">
+	<form class="search-bar" th:action="@{/instructors/search}" method="get">
+		<input type="search" name="q" th:value="${q}" placeholder="이름 검색 (예: 김이서)" autocomplete="off">
+		<button class="btn" type="submit">검색</button>
+		<a class="btn" th:if="${mode == 'search'}" th:href="@{/instructors}">✕ 닫기</a>
+	</form>
+	<div class="modes" th:unless="${mode == 'search'}">
+		<a class="btn" th:href="@{/instructors}" th:classappend="${mode == 'day'} ? 'btn-primary'">날짜별</a>
+		<a class="btn" th:href="@{/instructors/calendar}" th:classappend="${mode == 'calendar'} ? 'btn-primary'">전체 달력</a>
+		<a class="btn" th:href="@{/instructors/manage}" th:classappend="${mode == 'manage'} ? 'btn-primary'">강사 관리</a>
+	</div>
+</div>
+
+<!-- 저장 결과·입력 오류 안내 (redirect 후 한 번만 보이는 flash 값) -->
+<th:block th:fragment="flash">
+	<p class="flash ok" th:if="${message}" th:text="${message}">저장했습니다.</p>
+	<p class="flash error" th:if="${error}" th:text="${error}">오류</p>
+</th:block>
+</body>
+</html>

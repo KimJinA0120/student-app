@@ -4,8 +4,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -28,6 +30,10 @@ public class InstructorScheduleService {
 
 	// 교시별 부족 기준 인원
 	public static final int REQUIRED_PER_PERIOD = 8;
+
+	// 강사 일정 기간 (전체 달력·이름 검색 범위)
+	public static final LocalDate SEASON_START = LocalDate.of(2026, 10, 27);
+	public static final LocalDate SEASON_END = LocalDate.of(2026, 12, 10);
 
 	// 주강사 먼저, 같은 역할 안에서는 이름순 (역할 없음은 맨 뒤)
 	private static final Comparator<Entry> ENTRY_ORDER = Comparator
@@ -60,6 +66,58 @@ public class InstructorScheduleService {
 			result.add(calculate(date, instructors, todays, statuses));
 		}
 		return result;
+	}
+
+	// 이름에 keyword가 들어간 강사들의 기간 내 일정 (날짜순)
+	public List<NameSchedule> searchByName(String keyword) {
+		List<Instructor> found = instructorRepository.findByNameContainingOrderByName(keyword);
+		if (found.isEmpty()) {
+			return List.of();
+		}
+		List<DaySchedule> days = getSchedules(SEASON_START, SEASON_END);
+		return found.stream()
+			.map(i -> new NameSchedule(i.getId(), i.getName(), i.getPhone(), dateLines(i.getId(), days)))
+			.toList();
+	}
+
+	private List<NameSchedule.DateLine> dateLines(Long instructorId, List<DaySchedule> days) {
+		List<NameSchedule.DateLine> lines = new ArrayList<>();
+		for (DaySchedule day : days) {
+			List<Integer> confirmed = new ArrayList<>();
+			List<Integer> conditional = new ArrayList<>();
+			// 같은 메모가 교시마다 반복되므로 Set으로 한 번만
+			Set<String> memos = new LinkedHashSet<>();
+			for (PeriodSchedule p : day.periods()) {
+				if (find(p.confirmed(), instructorId) != null) {
+					confirmed.add(p.period());
+				}
+				Entry cond = find(p.conditional(), instructorId);
+				if (cond != null) {
+					conditional.add(p.period());
+					if (cond.memo() != null) {
+						memos.add("조건부: " + cond.memo());
+					}
+				}
+			}
+			for (Note n : day.absences()) {
+				if (n.instructorId().equals(instructorId)) {
+					memos.add(String.join(" ", "결근", n.periodText(), n.memo() == null ? "" : n.memo()).trim());
+				}
+			}
+			for (Note n : day.notes()) {
+				if (n.instructorId().equals(instructorId) && n.memo() != null) {
+					memos.add(n.memo());
+				}
+			}
+			if (!confirmed.isEmpty() || !conditional.isEmpty() || !memos.isEmpty()) {
+				lines.add(new NameSchedule.DateLine(day.date(), confirmed, conditional, List.copyOf(memos)));
+			}
+		}
+		return lines;
+	}
+
+	private Entry find(List<Entry> entries, Long instructorId) {
+		return entries.stream().filter(e -> e.instructorId().equals(instructorId)).findFirst().orElse(null);
 	}
 
 	private DaySchedule calculate(LocalDate date, Map<Long, Instructor> instructors,

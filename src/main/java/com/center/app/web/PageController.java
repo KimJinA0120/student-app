@@ -13,11 +13,6 @@ public class PageController {
 		return "redirect:/instructors";
 	}
 
-	@GetMapping("/instructors")
-	public String instructors(Model model) {
-		return placeholder(model, "instructors", "강사");
-	}
-
 	@GetMapping("/students")
 	public String students(Model model) {
 		return placeholder(model, "students", "수강생");

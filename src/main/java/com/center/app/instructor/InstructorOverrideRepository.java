@@ -11,4 +11,6 @@ public interface InstructorOverrideRepository extends JpaRepository<InstructorOv
 	// [from, to] 기간과 하루라도 겹치는 예외
 	@Query("select o from InstructorOverride o where o.startDate <= :to and o.endDate >= :from")
 	List<InstructorOverride> findOverlapping(LocalDate from, LocalDate to);
+
+	List<InstructorOverride> findByInstructorIdOrderByStartDateAscTypeAsc(Long instructorId);
 }

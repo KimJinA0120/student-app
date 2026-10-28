@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title>강사 검색 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<div th:replace="~{instructors/nav :: nav('search')}"></div>
+
+	<p class="muted empty" th:if="${results.isEmpty()}" th:text="|&quot;${q}&quot; 이름을 찾을 수 없습니다|">없음</p>
+
+	<section class="card" th:each="r : ${results}">
+		<h3 class="card-head">
+			<a class="name-link" th:href="@{/instructors/{id}(id=${r.instructorId()})}" th:text="${r.name()}">홍길동</a>
+			<a class="tel" th:if="${r.phone() != null}" th:href="|tel:${#strings.replace(r.phone(), '-', '')}|"
+			   th:text="${r.phone()}">010-0000-0000</a>
+		</h3>
+		<p class="muted" th:text="|확정 ${r.confirmedCount()}교시 · 날짜순|">확정 20교시 · 날짜순</p>
+		<p class="muted" th:if="${r.dates().isEmpty()}">기간 안에 일정이 없습니다.</p>
+		<div class="date-line" th:each="d : ${r.dates()}" th:classappend="${d.confirmed().isEmpty()} ? 'cond-only'">
+			<a class="date" th:href="@{/instructors(date=${d.date()})}" th:text="${#temporals.format(d.date(), 'M/d (E)')}">11/2 (월)</a>
+			<div>
+				<span th:unless="${d.confirmed().isEmpty()}"
+				      th:text="${#strings.listJoin(d.confirmed(), '·')} + '교시'">1·2교시</span>
+				<span class="cond" th:unless="${d.conditional().isEmpty()}"
+				      th:text="'조 ' + ${#strings.listJoin(d.conditional(), '·')} + '교시'">조 3교시</span>
+				<span class="memo" th:each="m : ${d.memos()}" th:text="${m}">메모</span>
+			</div>
+		</div>
+	</section>
+</main>
+</body>
+</html>

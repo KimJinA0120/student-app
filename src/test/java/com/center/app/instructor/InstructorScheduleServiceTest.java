@@ -137,6 +137,28 @@ class InstructorScheduleServiceTest {
 		assertThat(week.getLast().date()).isEqualTo(MON.plusDays(6));
 	}
 
+	@Test
+	void 이름_검색은_그_강사의_일정만_날짜순으로_보여준다() {
+		save(override(kim, OverrideType.ABSENT, MON, MON, Set.of(2), "병원"));
+		save(override(kim, OverrideType.CONDITIONAL, TUE, TUE, Set.of(3), "가능하면"));
+
+		List<NameSchedule> results = service.searchByName("김");
+
+		assertThat(results).singleElement().satisfies(r -> {
+			assertThat(r.name()).isEqualTo("김강사");
+			NameSchedule.DateLine first = r.dates().getFirst();
+			assertThat(first.date()).isEqualTo(InstructorScheduleService.SEASON_START.with(DayOfWeek.MONDAY).plusWeeks(1));
+			NameSchedule.DateLine mon = r.dates().stream().filter(d -> d.date().equals(MON)).findFirst().orElseThrow();
+			assertThat(mon.confirmed()).containsExactly(1);
+			assertThat(mon.memos()).containsExactly("결근 2교시 병원");
+			NameSchedule.DateLine tue = r.dates().stream().filter(d -> d.date().equals(TUE)).findFirst().orElseThrow();
+			assertThat(tue.confirmed()).isEmpty();
+			assertThat(tue.conditional()).containsExactly(3);
+			assertThat(tue.memos()).containsExactly("조건부: 가능하면");
+		});
+		assertThat(service.searchByName("없는이름")).isEmpty();
+	}
+
 	private DaySchedule schedule(LocalDate date) {
 		return service.getSchedule(date);
 	}

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title th:text="${instructor.name} + ' - 강사'">강사 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<div th:replace="~{instructors/nav :: nav('manage')}"></div>
+	<div th:replace="~{instructors/nav :: flash}"></div>
+
+	<h2 class="day-title" th:text="${instructor.name}">홍길동</h2>
+
+	<!-- 기본 정보 -->
+	<section class="edit-section">
+		<h3>기본 정보</h3>
+		<form class="inline-form" th:action="@{/instructors/{id}(id=${instructor.id})}" method="post">
+			<label>이름 <input name="name" th:value="${instructor.name}" required maxlength="30"></label>
+			<label>연락처 <input name="phone" th:value="${instructor.phone}" placeholder="010-0000-0000" maxlength="20"></label>
+			<button class="btn btn-primary" type="submit">저장</button>
+		</form>
+		<form th:action="@{/instructors/{id}/delete(id=${instructor.id})}" method="post"
+		      onsubmit="return confirm('강사를 삭제하면 기본 배치와 날짜별 예외도 모두 지워집니다. 삭제할까요?')">
+			<button class="btn btn-danger" type="submit">강사 삭제</button>
+		</form>
+	</section>
+
+	<!-- 기본 배치: 요일 × 교시 표. 역할을 비우면 그 칸은 배치 없음 -->
+	<section class="edit-section">
+		<h3>요일별 기본 배치</h3>
+		<form th:action="@{/instructors/{id}/slots(id=${instructor.id})}" method="post">
+			<table class="slot-grid">
+				<thead>
+				<tr>
+					<th></th>
+					<th th:each="label : ${dayLabels}" th:text="${label}">월</th>
+				</tr>
+				</thead>
+				<tbody>
+				<tr th:each="p : ${#numbers.sequence(1, 4)}">
+					<th th:text="${p} + '교시'">1교시</th>
+					<td th:each="d : ${days}" th:with="slot=${slots.get(d.name() + '_' + p)}, key=${d.name() + '_' + p}"
+					    th:classappend="${slot != null} ? 'on'">
+						<select th:name="'role_' + ${key}">
+							<option value="">-</option>
+							<option th:each="r : ${roles}" th:value="${r}" th:text="${r.label}"
+							        th:selected="${slot != null and slot.role == r}">주</option>
+						</select>
+						<input th:name="'note_' + ${key}" th:value="${slot?.note}" placeholder="비고" maxlength="200">
+					</td>
+				</tr>
+				</tbody>
+			</table>
+			<button class="btn btn-primary" type="submit">기본 배치 저장</button>
+		</form>
+	</section>
+
+	<!-- 날짜별 예외 -->
+	<section class="edit-section">
+		<h3>날짜별 예외</h3>
+		<form class="inline-form override-form" th:action="@{/instructors/{id}/overrides(id=${instructor.id})}" method="post">
+			<select name="type" required>
+				<option th:each="t : ${overrideTypes}" th:value="${t}" th:text="${t.label}">결근</option>
+			</select>
+			<label>시작일 <input type="date" name="startDate" required></label>
+			<label>종료일 <input type="date" name="endDate" title="비우면 시작일 하루"></label>
+			<span>교시
+				<label th:each="p : ${#numbers.sequence(1, 4)}"><input type="checkbox" name="periods" th:value="${p}"><span th:text="${p}">1</span></label>
+				<small class="muted">(비우면 전 교시)</small>
+			</span>
+			<label>역할
+				<select name="role" title="추가 배치일 때만 사용">
+					<option value="">-</option>
+					<option th:each="r : ${roles}" th:value="${r}" th:text="${r.label}">주</option>
+				</select>
+			</label>
+			<input name="memo" placeholder="메모" maxlength="500">
+			<button class="btn btn-primary" type="submit">추가</button>
+		</form>
+
+		<table class="list">
+			<thead>
+			<tr><th>종류</th><th>기간</th><th>교시</th><th>역할</th><th>메모</th><th></th></tr>
+			</thead>
+			<tbody>
+			<tr th:each="o : ${overrides}">
+				<td th:text="${o.type.label}">결근</td>
+				<td th:text="${o.startDate == o.endDate} ? ${#temporals.format(o.startDate, 'M/d (E)')}
+				             : ${#temporals.format(o.startDate, 'M/d (E)')} + ' ~ ' + ${#temporals.format(o.endDate, 'M/d (E)')}">11/9 (월)</td>
+				<td th:text="${o.allPeriods} ? '전 교시' : ${#strings.listJoin(o.periods, '·')}">전 교시</td>
+				<td th:text="${o.role?.label}"></td>
+				<td th:text="${o.memo}">메모</td>
+				<td>
+					<form th:action="@{/instructors/{id}/overrides/{oid}/delete(id=${instructor.id}, oid=${o.id})}" method="post"
+					      onsubmit="return confirm('이 예외를 삭제할까요?')">
+						<button class="btn" type="submit">삭제</button>
+					</form>
+				</td>
+			</tr>
+			<tr th:if="${overrides.isEmpty()}"><td colspan="6" class="muted empty">날짜별 예외가 없습니다.</td></tr>
+			</tbody>
+		</table>
+	</section>
+</main>
+</body>
+</html>
