@@ -40,15 +40,17 @@
 		<h3>들은 수업 (최근순)</h3>
 		<table class="list">
 			<thead>
-			<tr><th>날짜</th><th>교시</th><th>강사</th></tr>
+			<tr><th>회차</th><th>날짜</th><th>교시</th><th>강사</th></tr>
 			</thead>
 			<tbody>
-			<tr th:each="l : ${lessons}">
+			<!-- 최근순 목록이라 회차 = 전체 개수 − 순서 (가장 오래된 수업이 1회차) -->
+			<tr th:each="l, st : ${lessons}">
+				<td th:text="${lessons.size() - st.index} + '회차'">1회차</td>
 				<td><a th:href="@{/lessons/{id}/edit(id=${l.lessonId()}, back=${currentUrl})}" th:text="${#temporals.format(l.date(), 'M/d (E)')}">11/2 (월)</a></td>
 				<td th:text="${l.period()} + '교시'">1교시</td>
 				<td th:text="${l.instructorName()}">김강사</td>
 			</tr>
-			<tr th:if="${lessons.isEmpty()}"><td colspan="3" class="muted empty">아직 수업 기록이 없습니다.</td></tr>
+			<tr th:if="${lessons.isEmpty()}"><td colspan="4" class="muted empty">아직 수업 기록이 없습니다.</td></tr>
 			</tbody>
 		</table>
 	</section>

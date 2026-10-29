@@ -2,6 +2,7 @@ package com.center.app.web;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -11,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 import com.center.app.instructor.Instructor;
@@ -86,6 +88,29 @@ class StudentControllerTest {
 			.andExpect(content().string(containsString("11/2 (월)")))
 			.andExpect(content().string(containsString("3교시")))
 			.andExpect(content().string(containsString("/lessons/new?studentIds=" + hong.getId())));
+	}
+
+	@Test
+	void 여러_명이_들은_수업은_각자_상세에_회차와_함께_보인다() throws Exception {
+		Instructor lee = instructorRepository.save(new Instructor("이강사", null));
+		Student park = studentRepository.save(new Student(
+			new Student.Info("박영희", null, null, null, null, null, null), Set.of()));
+		Student choi = studentRepository.save(new Student(
+			new Student.Info("최철수", null, null, null, null, null, null), Set.of()));
+		lessonRepository.save(new Lesson(LocalDate.of(2026, 11, 5), 2,
+			roomRepository.findAllByOrderBySortOrderAsc().getFirst(), lee, null, null, Set.of(hong, park, choi)));
+
+		// 홍길동: 11/2 김강사가 1회차, 11/5 이강사가 2회차 (최근순이라 2회차가 위)
+		mvc.perform(get("/students/" + hong.getId()))
+			.andExpect(content().string(containsString("방문 2회")))
+			.andExpect(content().string(stringContainsInOrder(
+				"2회차", "11/5 (목)", "2교시", "이강사", "1회차", "11/2 (월)", "3교시", "김강사")));
+		// 같은 수업을 들은 나머지 두 명에게도 1회차로 보임
+		for (Student s : List.of(park, choi)) {
+			mvc.perform(get("/students/" + s.getId()))
+				.andExpect(content().string(containsString("방문 1회")))
+				.andExpect(content().string(stringContainsInOrder("1회차", "11/5 (목)", "2교시", "이강사")));
+		}
 	}
 
 	@Test
