@@ -1,9 +1,14 @@
 package com.center.app.web;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.center.app.consultation.Consultation;
+import com.center.app.consultation.ConsultationService;
 import com.center.app.instructor.Instructor;
 import com.center.app.instructor.InstructorService;
 import com.center.app.student.Student;
@@ -29,8 +34,10 @@ public class StudentController {
 
 	private final StudentService studentService;
 	private final InstructorService instructorService;
+	private final ConsultationService consultationService;
 
 	// 등록·수정 폼. 빈 칸은 null로 들어옴
+	// consultationId: 상담일지에서 [수강생 등록]으로 왔을 때만 값이 있음 (저장하면 그 상담에 연결)
 	public record StudentForm(
 		String name,
 		String phone,
@@ -39,13 +46,32 @@ public class StudentController {
 		String attendId,
 		@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
 		String memo,
-		Set<Long> hopeInstructorIds
+		Set<Long> hopeInstructorIds,
+		Long consultationId
 	) {
 
 		static StudentForm of(Student s) {
 			return new StudentForm(s.getName(), s.getPhone(), s.getAge(), s.getHopeClass(), s.getAttendId(),
 				s.getStartDate(), s.getMemo(),
-				s.getHopeInstructors().stream().map(Instructor::getId).collect(Collectors.toSet()));
+				s.getHopeInstructors().stream().map(Instructor::getId).collect(Collectors.toSet()), null);
+		}
+
+		// 상담 내용을 등록 폼에 옮겨 담음. 희망 요일·시간과 상담 비고는 수강생 비고 칸에 한데 적음
+		static StudentForm of(Consultation c) {
+			return new StudentForm(c.getName(), c.getPhone(), null, c.getHopeClass(), null, null, consultMemo(c),
+				Set.of(), c.getId());
+		}
+
+		// 예) "[상담 10/29] 희망: 매일 13:00\n기존 수강생 소개 방문 상담"
+		private static String consultMemo(Consultation c) {
+			String head = c.getConsultDate() == null ? "[상담]"
+				: "[상담 " + c.getConsultDate().format(DateTimeFormatter.ofPattern("M/d")) + "]";
+			String hope = Stream.of(c.getHopeDay(), c.getHopeTime()).filter(Objects::nonNull)
+				.collect(Collectors.joining(" "));
+			if (!hope.isEmpty()) {
+				head += " 희망: " + hope;
+			}
+			return c.getMemo() == null ? head : head + "\n" + c.getMemo();
 		}
 
 		Student.Info info() {
@@ -74,8 +100,16 @@ public class StudentController {
 	}
 
 	@GetMapping("/new")
-	public String newForm(Model model) {
-		return form(model, null, new StudentForm(null, null, null, null, null, null, null, Set.of()));
+	public String newForm(@RequestParam(required = false) Long consultationId, Model model, RedirectAttributes ra) {
+		if (consultationId == null) {
+			return form(model, null, new StudentForm(null, null, null, null, null, null, null, Set.of(), null));
+		}
+		try {
+			return form(model, null, StudentForm.of(consultationService.getForRegistration(consultationId)));
+		} catch (IllegalArgumentException e) {
+			ra.addFlashAttribute("error", e.getMessage());
+			return "redirect:/consultations";
+		}
 	}
 
 	@GetMapping("/{id:\\d+}/edit")
@@ -90,7 +124,7 @@ public class StudentController {
 			return formWithError(model, null, form, "입력 형식이 올바르지 않습니다. 나이·날짜를 확인하세요.");
 		}
 		try {
-			Long id = studentService.create(form.info(), form.hopeInstructorIds());
+			Long id = studentService.create(form.info(), form.hopeInstructorIds(), form.consultationId());
 			ra.addFlashAttribute("message", "수강생을 등록했습니다.");
 			return "redirect:/students/" + id;
 		} catch (IllegalArgumentException e) {

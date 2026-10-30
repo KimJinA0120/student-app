@@ -123,6 +123,23 @@ table.info { border-collapse: collapse; }
 .stack-form .check-grid label { flex-direction: row; align-items: center; gap: 4px; }
 .day-title .pill { vertical-align: middle; margin-left: 8px; }
 
+/* ── 상담 탭 ── */
+table.consult-list { max-width: 1200px; }
+.consult-list td { vertical-align: top; }
+.consult-list .tel { margin-left: 0; white-space: nowrap; }
+.consult-act { white-space: nowrap; }
+.consult-act .pill { margin-top: 0; text-decoration: none; }
+.pending-toggle { display: flex; gap: 4px; align-items: center; white-space: nowrap; }
+.search-bar .pending-toggle input { width: auto; }
+
+/* ── 업무일지 탭 ── */
+table.worklog-list { max-width: 1400px; }
+.worklog-list th, .worklog-list td { vertical-align: top; }
+.worklog-list .num { text-align: right; }
+.worklog-list .nowrap { white-space: nowrap; }
+.worklog-totals { margin: 0 0 8px; }
+.stack-form fieldset { border: 1px solid var(--line); border-radius: 4px; padding: 8px 12px; }
+
 /* ── 수업 기록 ── */
 .field-row { display: flex; flex-wrap: wrap; gap: 12px; }
 .lesson-form { max-width: 760px; }

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title>업무일지 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<div class="ins-nav">
+		<a class="btn" th:href="@{/work-logs/new}">+ 업무일지 작성</a>
+	</div>
+
+	<!-- 누적 합계 (엑셀 3행과 같음, 저장하지 않고 계산) -->
+	<p class="worklog-totals">
+		누적 강좌 <b th:text="${totals.lessons()}">0</b>
+		· 누적 신규 <b th:text="${totals.newCount()}">0</b>
+		· 누적 기존 <b th:text="${totals.existingCount()}">0</b>
+		· 누적 수강생 <b th:text="${totals.students()}">0</b>
+		· 작성한 날 <b th:text="${totals.days()}">0</b>
+	</p>
+
+	<table class="list worklog-list">
+		<thead>
+		<tr>
+			<th rowspan="2">날짜</th><th colspan="5">금일 수업 강좌수</th><th rowspan="2">강사</th>
+			<th colspan="3">수강생(명)</th><th rowspan="2">특이사항</th><th rowspan="2"></th>
+		</tr>
+		<tr><th>1</th><th>2</th><th>3</th><th>4</th><th>계</th><th>신규</th><th>기존</th><th>계</th></tr>
+		</thead>
+		<tbody>
+		<tr th:each="log : ${logs}">
+			<td class="nowrap"><a class="name-link" th:href="@{/work-logs/{id}/edit(id=${log.id})}"
+			       th:text="|${#temporals.format(log.logDate, 'M/d')}(${log.dayOfWeek()})|">10/29(목)</a></td>
+			<td class="num" th:text="${log.period1}">4</td>
+			<td class="num" th:text="${log.period2}">6</td>
+			<td class="num" th:text="${log.period3}">3</td>
+			<td class="num" th:text="${log.period4}">3</td>
+			<td class="num"><b th:text="${log.lessonTotal()}">16</b></td>
+			<td class="pre" th:text="${log.instructorNote}">강사</td>
+			<td class="num" th:text="${log.newCount}">5</td>
+			<td class="num" th:text="${log.existingCount}">16</td>
+			<td class="num"><b th:text="${log.studentTotal()}">21</b></td>
+			<td class="pre" th:text="${log.specialNote}">특이사항</td>
+			<td>
+				<textarea hidden th:id="|kakao-${log.id}|" th:text="${log.kakaoText()}"></textarea>
+				<button class="btn btn-sm" type="button" th:attr="data-copy=|kakao-${log.id}|">카톡 복사</button>
+			</td>
+		</tr>
+		<tr th:if="${logs.isEmpty()}">
+			<td colspan="12" class="muted empty">작성한 업무일지가 없습니다.</td>
+		</tr>
+		</tbody>
+	</table>
+	<script th:src="@{/js/copy-text.js}"></script>
+</main>
+</body>
+</html>

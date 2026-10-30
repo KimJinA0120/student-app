@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title th:text="${workLogId == null} ? '업무일지 작성 - 수강생 관리' : '업무일지 수정 - 수강생 관리'">업무일지 작성</title>
+</head>
+<body>
+<main class="content">
+	<div class="ins-nav">
+		<a class="btn" th:href="@{/work-logs}">‹ 목록</a>
+		<th:block th:if="${kakaoText != null}">
+			<textarea hidden id="kakao-text" th:text="${kakaoText}"></textarea>
+			<button class="btn btn-primary" type="button" data-copy="kakao-text">카톡 복사</button>
+		</th:block>
+	</div>
+	<h2 class="day-title" th:text="${workLogId == null} ? '업무일지 작성' : '업무일지 수정'">업무일지 작성</h2>
+
+	<form class="stack-form" method="post"
+	      th:action="${workLogId == null} ? @{/work-logs} : @{/work-logs/{id}(id=${workLogId})}">
+		<!-- 새로 쓸 때 날짜를 바꾸면 그 날짜 수업 기록으로 숫자를 다시 채움 -->
+		<label>날짜 <input type="date" id="log-date" name="logDate" th:value="${form.logDate()}" required></label>
+		<script th:if="${workLogId == null}">
+			document.getElementById('log-date').addEventListener('change', e => {
+				if (e.target.value) location.search = '?date=' + e.target.value;
+			});
+		</script>
+		<small class="muted" th:if="${workLogId == null}">숫자는 그날 수업 기록으로 미리 채웠습니다. 다르면 고쳐 주세요.</small>
+		<fieldset>
+			<legend>금일 수업 강좌수</legend>
+			<div class="field-row">
+				<label>1교시 <input type="number" min="0" max="999" name="period1" th:value="${form.period1()}"></label>
+				<label>2교시 <input type="number" min="0" max="999" name="period2" th:value="${form.period2()}"></label>
+				<label>3교시 <input type="number" min="0" max="999" name="period3" th:value="${form.period3()}"></label>
+				<label>4교시 <input type="number" min="0" max="999" name="period4" th:value="${form.period4()}"></label>
+			</div>
+		</fieldset>
+		<fieldset>
+			<legend>수강생(명)</legend>
+			<div class="field-row">
+				<label>신규 <input type="number" min="0" max="999" name="newCount" th:value="${form.newCount()}"></label>
+				<label>기존 <input type="number" min="0" max="999" name="existingCount" th:value="${form.existingCount()}"></label>
+			</div>
+		</fieldset>
+		<label>강사 <textarea name="instructorNote" rows="4" maxlength="1000" th:text="${form.instructorNote()}"
+		                    placeholder="예: - 1교시 강사 출석 완료(운영 1명 투입)"></textarea></label>
+		<label>특이사항 <textarea name="specialNote" rows="8" maxlength="2000" th:text="${form.specialNote()}"
+		                      placeholder="예: - 205호 wifi 안됨"></textarea></label>
+		<div><button class="btn btn-primary" type="submit">저장</button></div>
+	</form>
+
+	<form th:if="${workLogId != null}" class="danger-zone" th:action="@{/work-logs/{id}/delete(id=${workLogId})}"
+	      method="post" onsubmit="return confirm('이 업무일지를 삭제할까요?')">
+		<button class="btn btn-danger" type="submit">업무일지 삭제</button>
+	</form>
+	<script th:src="@{/js/copy-text.js}"></script>
+</main>
+</body>
+</html>

@@ -19,8 +19,10 @@
 	<nav class="tabs">
 		<a th:href="@{/instructors}" th:classappend="${activeTab == 'instructors'} ? 'active'">강사</a>
 		<a th:href="@{/students}" th:classappend="${activeTab == 'students'} ? 'active'">수강생</a>
+		<a th:href="@{/consultations}" th:classappend="${activeTab == 'consultations'} ? 'active'">상담</a>
 		<a th:href="@{/managers}" th:classappend="${activeTab == 'managers'} ? 'active'">운영 매니저</a>
 		<a th:href="@{/lessons}" th:classappend="${activeTab == 'lessons'} ? 'active'">수업 기록</a>
+		<a th:href="@{/work-logs}" th:classappend="${activeTab == 'workLogs'} ? 'active'">업무일지</a>
 	</nav>
 </header>
 <div class="body">

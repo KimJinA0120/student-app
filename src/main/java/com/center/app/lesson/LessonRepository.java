@@ -1,6 +1,7 @@
 package com.center.app.lesson;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,6 +41,10 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
 	// 방문 회차 = 수강생별 lesson_student 행 수 → [수강생 id, 횟수]
 	@Query("select s.id, count(l) from Lesson l join l.students s group by s.id")
 	List<Object[]> countByStudent();
+
+	// 업무일지 신규·기존 구분용: 수강생별 첫 수업 날짜 → [수강생 id, 날짜]
+	@Query("select s.id, min(l.lessonDate) from Lesson l join l.students s where s.id in :studentIds group by s.id")
+	List<Object[]> findFirstLessonDates(Collection<Long> studentIds);
 
 	@Query("select count(l) from Lesson l join l.students s where s.id = :studentId")
 	long countByStudentId(Long studentId);

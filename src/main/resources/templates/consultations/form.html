@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title th:text="${consultationId == null} ? '상담 등록 - 수강생 관리' : '상담 수정 - 수강생 관리'">상담 등록</title>
+</head>
+<body>
+<main class="content">
+	<div class="ins-nav">
+		<a class="btn" th:href="@{/consultations}">‹ 목록</a>
+		<a class="btn btn-primary" th:if="${consultationId != null and registeredStudent == null}"
+		   th:href="@{/students/new(consultationId=${consultationId})}">수강생 등록</a>
+	</div>
+	<h2 class="day-title">
+		<span th:text="${consultationId == null} ? '상담 등록' : '상담 수정'">상담 등록</span>
+		<a class="pill ok" th:if="${registeredStudent != null}" th:href="@{/students/{id}(id=${registeredStudent.id})}"
+		   th:text="|등록됨 · ${registeredStudent.name}|">등록됨</a>
+	</h2>
+
+	<form class="stack-form" method="post"
+	      th:action="${consultationId == null} ? @{/consultations} : @{/consultations/{id}(id=${consultationId})}">
+		<label>상담일 <input type="date" name="consultDate" th:value="${form.consultDate()}"></label>
+		<label>성명 <input name="name" th:value="${form.name()}" maxlength="30"></label>
+		<label>연락처 <input name="phone" th:value="${form.phone()}" placeholder="010-0000-0000" maxlength="20"></label>
+		<small class="muted">성명·연락처 중 하나는 입력하세요.</small>
+		<label>희망 수업 <input name="hopeClass" th:value="${form.hopeClass()}" placeholder="예: 스마트폰 기초, 키오스크" maxlength="100"></label>
+		<div class="field-row">
+			<label>희망 요일 <input name="hopeDay" th:value="${form.hopeDay()}" placeholder="예: 매일, 월수금, 주말" maxlength="30"></label>
+			<label>희망 시간 <input name="hopeTime" th:value="${form.hopeTime()}" placeholder="예: 13:00" maxlength="30"></label>
+		</div>
+		<label>비고 <textarea name="memo" rows="4" maxlength="500" th:text="${form.memo()}"
+		                    placeholder="예: (전화) 월요일 9:30 방문 예정"></textarea></label>
+		<div><button class="btn btn-primary" type="submit">저장</button></div>
+	</form>
+
+	<form th:if="${consultationId != null}" class="danger-zone" th:action="@{/consultations/{id}/delete(id=${consultationId})}"
+	      method="post" onsubmit="return confirm('이 상담 기록을 삭제할까요?')">
+		<button class="btn btn-danger" type="submit">상담 기록 삭제</button>
+	</form>
+</main>
+</body>
+</html>

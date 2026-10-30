@@ -7,12 +7,15 @@
 <body>
 <main class="content">
 	<div class="ins-nav">
-		<a class="btn" th:href="${studentId == null} ? @{/students} : @{/students/{id}(id=${studentId})}">‹ 돌아가기</a>
+		<a class="btn" th:href="${form.consultationId() != null} ? @{/consultations}
+		                         : (${studentId == null} ? @{/students} : @{/students/{id}(id=${studentId})})">‹ 돌아가기</a>
 	</div>
 	<h2 class="day-title" th:text="${studentId == null} ? '수강생 등록' : '수강생 수정'">수강생 등록</h2>
+	<p class="flash warn" th:if="${form.consultationId() != null}">상담일지 내용을 옮겨 왔습니다. 확인하고 저장하세요.</p>
 
 	<form class="stack-form" method="post"
 	      th:action="${studentId == null} ? @{/students} : @{/students/{id}(id=${studentId})}">
+		<input type="hidden" name="consultationId" th:if="${form.consultationId() != null}" th:value="${form.consultationId()}">
 		<label>성명 <b class="req">*</b> <input name="name" th:value="${form.name()}" required maxlength="30"></label>
 		<label>연락처 <input name="phone" th:value="${form.phone()}" placeholder="010-0000-0000" maxlength="20"></label>
 		<label>나이 <input type="number" name="age" th:value="${form.age()}" min="0" max="150"></label>

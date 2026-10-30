@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title>상담 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<!-- 이름·연락처 검색 + 아직 수강생 등록 안 한 상담만 보기 -->
+	<div class="ins-nav">
+		<form class="search-bar" th:action="@{/consultations}" method="get">
+			<input type="search" name="q" th:value="${q}" placeholder="이름·연락처 검색" autocomplete="off">
+			<label class="pending-toggle"><input type="checkbox" name="pending" value="true" th:checked="${pending}"
+			                                     onchange="this.form.submit()"> 미등록만</label>
+			<button class="btn" type="submit">검색</button>
+			<a class="btn" th:if="${!q.isEmpty() or pending}" th:href="@{/consultations}">✕ 닫기</a>
+		</form>
+		<a class="btn" th:href="@{/consultations/new}">+ 상담 등록</a>
+	</div>
+
+	<table class="list consult-list">
+		<thead>
+		<tr><th>상담일</th><th>성명</th><th>연락처</th><th>희망 수업</th><th>희망 요일</th><th>희망 시간</th><th>비고</th><th></th></tr>
+		</thead>
+		<tbody>
+		<tr th:each="c : ${consultations}">
+			<td th:text="${c.consultDate == null} ? '' : ${#temporals.format(c.consultDate, 'M/d')}">10/29</td>
+			<td><a class="name-link" th:href="@{/consultations/{id}/edit(id=${c.id})}"><b th:text="${c.name ?: '(이름 없음)'}">홍길동</b></a></td>
+			<td><a class="tel" th:if="${c.phone != null}"
+			       th:href="|tel:${#strings.replace(c.phone, '-', '')}|" th:text="${c.phone}">010-0000-0000</a></td>
+			<td th:text="${c.hopeClass}">스마트폰 기초</td>
+			<td th:text="${c.hopeDay}">매일</td>
+			<td th:text="${c.hopeTime}">13:00</td>
+			<td class="pre" th:text="${c.memo}">비고</td>
+			<td class="consult-act">
+				<a class="pill ok" th:if="${c.student != null}" th:href="@{/students/{id}(id=${c.student.id})}"
+				   th:text="|등록됨 · ${c.student.name}|">등록됨</a>
+				<a class="btn btn-sm btn-primary" th:if="${c.student == null}"
+				   th:href="@{/students/new(consultationId=${c.id})}">수강생 등록</a>
+			</td>
+		</tr>
+		<tr th:if="${consultations.isEmpty()}">
+			<td colspan="8" class="muted empty" th:text="${q.isEmpty() and !pending} ? '등록된 상담이 없습니다.' : '조건에 맞는 상담이 없습니다.'">없음</td>
+		</tr>
+		</tbody>
+	</table>
+</main>
+</body>
+</html>

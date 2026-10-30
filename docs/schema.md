@@ -35,6 +35,7 @@ erDiagram
     instructor ||--o{ student_hope_instructor : ""
     manager ||--o{ manager_shift : "기본 근무"
     manager ||--o{ manager_exception : "예외"
+    student |o--o{ consultation : "상담에서 등록"
 ```
 
 `check_item`은 다른 테이블과 관계 없음 (사람 이름은 텍스트로 기록).
@@ -273,6 +274,56 @@ CREATE INDEX idx_reservation_student_student ON reservation_student(student_id);
 - 수강생을 삭제하면 그 수강생을 고른 예약에서 먼저 뺌 (서비스에서).
 - 배정 시 강사 칸에 이미 행이 있으면 수강생은 합침.
 
+### 4-5-2. 상담일지 (10/30 추가)
+
+```sql
+-- 전화·방문 문의 한 줄. [수강생 등록]으로 수강생이 되면 student_id 연결
+CREATE TABLE consultation (
+  id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+  name          VARCHAR(30),                     -- 성명·연락처 중 하나는 필수 (서비스에서 검사)
+  phone         VARCHAR(20),
+  hope_class    VARCHAR(100),
+  hope_day      VARCHAR(30),                     -- 자유 글 (매일, 월수금, 주말)
+  hope_time     VARCHAR(30),                     -- 자유 글 (09:30)
+  memo          VARCHAR(500),                    -- 상담 방식은 "(전화) …"처럼 여기에
+  consult_date  DATE,
+  student_id    BIGINT REFERENCES student(id),   -- NULL = 아직 수강생 등록 안 함
+  created_at    TIMESTAMP     NOT NULL,
+  updated_at    TIMESTAMP     NOT NULL
+);
+```
+
+- 희망 요일·시간은 계산에 쓰지 않아 자유 글. 상담 방식(전화/방문/홍보)은 컬럼 없이 비고에 적음.
+- [수강생 등록] → `/students/new?consultationId=` 폼에 성명·연락처·희망 수업을 같은 칸에, 상담일·희망 요일·시간·비고는 수강생 비고에 채움. 수강생 저장과 `student_id` 연결은 한 트랜잭션.
+- `student_id`가 있으면 다시 등록할 수 없음 (서비스에서 검사).
+- 수강생을 삭제하면 `student_id`만 NULL로 (상담 기록은 남김, 서비스에서).
+- 첫 데이터: `ConsultationImportRunner`가 서버 시작 시 `app.sheet-import.file` 엑셀의 "상담" 시트를 읽어 넣음. **테이블이 비어 있을 때만**, 한 트랜잭션(하나라도 오류면 전부 취소).
+
+### 4-5-3. 업무일지 (10/30 추가)
+
+```sql
+-- 하루 한 줄. 숫자는 새로 쓸 때 수업 기록으로 미리 채우지만, 저장하는 값은 매니저가 확인한 값
+CREATE TABLE work_log (
+  id               BIGINT AUTO_INCREMENT PRIMARY KEY,
+  log_date         DATE          NOT NULL UNIQUE,
+  period1          INT,                            -- 교시별 수업 강좌 수 (빈 칸 허용)
+  period2          INT,
+  period3          INT,
+  period4          INT,
+  new_count        INT,                            -- 신규 수강생 수
+  existing_count   INT,                            -- 기존 수강생 수
+  instructor_note  VARCHAR(1000),                  -- "강사" 칸 (출석 메모)
+  special_note     VARCHAR(2000),
+  created_at       TIMESTAMP     NOT NULL,
+  updated_at       TIMESTAMP     NOT NULL
+);
+```
+
+- 요일·강좌 계·수강생 계·누적 합계는 저장하지 않고 계산.
+- 미리 채우기: 강좌 수 = 그 날짜·교시의 `lesson` 수. 신규 = 그날 수업을 들은 수강생 중 첫 수업 날짜(`min(lesson_date)`)가 그날인 사람, 기존 = 나머지 (수강생 기준 중복 제거).
+- 숫자는 0~999. 같은 날짜 중복은 서비스에서 먼저 막고 UNIQUE 제약도 둠.
+- 첫 데이터: `WorkLogImportRunner`가 `app.sheet-import.file` 엑셀의 "업무일지" 시트를 읽어 넣음. 테이블이 비어 있을 때만, 한 트랜잭션.
+
 ### 4-6. 확인 필요
 
 ```sql
@@ -328,5 +379,7 @@ com.center.app
  ├─ lesson/        Lesson, LessonRepository, LessonService, Reservation(예약), ReservationService
  ├─ manager/       Manager, ManagerShift, ManagerException, repos, service
  ├─ checkitem/     CheckItem, CheckItemRepository
+ ├─ consultation/  Consultation(상담일지), ConsultationRepository, ConsultationService
+ ├─ worklog/       WorkLog(업무일지), WorkLogRepository, WorkLogService
  └─ web/           컨트롤러 + Thymeleaf 템플릿
 ```

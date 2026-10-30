@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.center.app.consultation.ConsultationService;
 import com.center.app.instructor.Instructor;
 import com.center.app.instructor.InstructorRepository;
 import com.center.app.lesson.Lesson;
@@ -31,6 +32,7 @@ public class StudentService {
 	private final InstructorRepository instructorRepository;
 	private final LessonRepository lessonRepository;
 	private final ReservationService reservationService;
+	private final ConsultationService consultationService;
 
 	// 상세 화면의 수업 한 줄
 	public record LessonLine(Long lessonId, LocalDate date, int period, String instructorName) {
@@ -81,7 +83,16 @@ public class StudentService {
 	}
 
 	public Long create(Student.Info info, Set<Long> hopeInstructorIds) {
-		return studentRepository.save(new Student(valid(info), hopes(hopeInstructorIds))).getId();
+		return create(info, hopeInstructorIds, null);
+	}
+
+	// consultationId: 상담일지에서 [수강생 등록]으로 왔으면 그 상담에 새 수강생을 연결 (같은 트랜잭션이라 하나가 실패하면 둘 다 취소)
+	public Long create(Student.Info info, Set<Long> hopeInstructorIds, Long consultationId) {
+		Student student = studentRepository.save(new Student(valid(info), hopes(hopeInstructorIds)));
+		if (consultationId != null) {
+			consultationService.linkStudent(consultationId, student);
+		}
+		return student.getId();
 	}
 
 	public void update(Long id, Student.Info info, Set<Long> hopeInstructorIds) {
@@ -95,6 +106,7 @@ public class StudentService {
 			throw new IllegalArgumentException("수업 기록이 있는 수강생은 삭제할 수 없습니다. 수업 기록을 먼저 정리하세요.");
 		}
 		reservationService.removeStudent(student);
+		consultationService.unlinkStudent(student);
 		studentRepository.delete(student);
 	}
 

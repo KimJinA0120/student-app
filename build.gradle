@@ -28,6 +28,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+	// 상담일지 첫 이전용 엑셀(.xlsx) 읽기
+	implementation 'org.apache.poi:poi-ooxml:5.4.1'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.h2database:h2'
 	// 순서 주의: Lombok이 getter를 만든 뒤 MapStruct가 매퍼를 생성해야 함 (binding이 둘을 연결)
