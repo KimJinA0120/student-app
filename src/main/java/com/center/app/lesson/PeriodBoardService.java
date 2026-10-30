@@ -8,13 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+import com.center.app.instructor.DaySchedule;
 import com.center.app.instructor.DaySchedule.Entry;
 import com.center.app.instructor.DaySchedule.PeriodSchedule;
-import com.center.app.instructor.DayStatus;
-import com.center.app.instructor.InstructorDayStatus;
-import com.center.app.instructor.InstructorDayStatusRepository;
 import com.center.app.instructor.InstructorScheduleService;
 import com.center.app.lesson.PeriodBoard.InstructorLine;
 import com.center.app.lesson.PeriodBoard.LessonInfo;
@@ -26,14 +23,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 // 기준 시점의 근무 강사(InstructorScheduleService 재사용) + 진행 중 수업 + 교실 사용 현황 계산
-// 근무 중인 강사 패널, 수업 기록 폼(강사·교실 선택지), 희망 강사 알림에서 함께 사용
+// 수업 기록 폼(강사·교실 선택지, 빈 교실 자동 배정)과 희망 강사 알림에서 사용
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PeriodBoardService {
 
 	private final InstructorScheduleService scheduleService;
-	private final InstructorDayStatusRepository dayStatusRepository;
 	private final LessonRepository lessonRepository;
 	private final RoomRepository roomRepository;
 	private final Clock clock;
@@ -57,32 +53,23 @@ public class PeriodBoardService {
 			lessonByRoom.put(l.getRoom().getId(), info);
 			unscheduledNames.put(l.getInstructor().getId(), l.getInstructor().getName());
 		}
-		// 휴식·외출은 시작한 교시부터 [복귀]까지, 조퇴는 누른 교시에 "조퇴" 표시 (이후 교시는 근무에서 빠짐)
-		List<InstructorDayStatus> dayStatuses = dayStatusRepository.findByStatusDateBetween(ref.date(), ref.date());
-		Map<Long, DayStatus> statuses = dayStatuses.stream()
-			.filter(s -> ref.period() >= s.getFromPeriod())
-			.collect(Collectors.toMap(s -> s.getInstructor().getId(), InstructorDayStatus::getStatus));
-		Set<Long> leftEarly = dayStatuses.stream()
-			.filter(s -> s.excludes(ref.period()))
-			.map(s -> s.getInstructor().getId())
-			.collect(Collectors.toSet());
-
-		PeriodSchedule schedule = scheduleService.getSchedule(ref.date()).period(ref.period());
+		// 조퇴는 누른 교시까지 근무로 남고(이후 교시는 근무 계산에서 이미 빠짐) 그 교시엔 "조퇴" 표시
+		DaySchedule day = scheduleService.getSchedule(ref.date());
+		Set<Long> leftEarly = day.leaveEarly().keySet();
+		PeriodSchedule schedule = day.period(ref.period());
 		List<InstructorLine> lines = new ArrayList<>();
 		for (Entry e : schedule.confirmed()) {
-			lines.add(line(e, false, statuses, lessonByInstructor));
+			lines.add(line(e, false, leftEarly, lessonByInstructor));
 		}
 		for (Entry e : schedule.conditional()) {
-			if (!leftEarly.contains(e.instructorId())) {
-				lines.add(line(e, true, statuses, lessonByInstructor));
-			}
+			lines.add(line(e, true, leftEarly, lessonByInstructor));
 		}
 		// 배치표에는 없지만 수업 기록이 있는 강사도 보여야 [종료]·[취소]를 할 수 있음
 		lines.stream().map(InstructorLine::instructorId).toList().forEach(unscheduledNames::remove);
 		unscheduledNames.entrySet().stream()
 			.sorted(Map.Entry.comparingByValue())
 			.forEach(u -> lines.add(new InstructorLine(u.getKey(), u.getValue(), null, false, false,
-				statuses.get(u.getKey()), lessonByInstructor.get(u.getKey()))));
+				leftEarly.contains(u.getKey()), lessonByInstructor.get(u.getKey()))));
 
 		List<RoomLine> rooms = roomRepository.findAllByOrderBySortOrderAsc().stream()
 			.map(r -> new RoomLine(r.getId(), r.getName(), lessonByRoom.get(r.getId())))
@@ -90,9 +77,8 @@ public class PeriodBoardService {
 		return new PeriodBoard(ref, lines, rooms, RefPoint.isPast(ref.date(), ref.period(), LocalDateTime.now(clock)));
 	}
 
-	private InstructorLine line(Entry e, boolean conditional, Map<Long, DayStatus> statuses,
-			Map<Long, LessonInfo> lessons) {
+	private InstructorLine line(Entry e, boolean conditional, Set<Long> leftEarly, Map<Long, LessonInfo> lessons) {
 		return new InstructorLine(e.instructorId(), e.name(), e.role(), conditional, true,
-			statuses.get(e.instructorId()), lessons.get(e.instructorId()));
+			leftEarly.contains(e.instructorId()), lessons.get(e.instructorId()));
 	}
 }

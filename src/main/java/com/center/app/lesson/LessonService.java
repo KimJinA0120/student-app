@@ -55,6 +55,12 @@ public class LessonService {
 			.toList();
 	}
 
+	// 강사 시간표 칸에 보여 줄 하루치 수업
+	@Transactional(readOnly = true)
+	public List<Lesson> findByDate(LocalDate date) {
+		return lessonRepository.findWithDetailsByDate(date);
+	}
+
 	// 강사·교실·수강생까지 읽음 (open-in-view=false라 화면에서 지연 로딩 불가)
 	@Transactional(readOnly = true)
 	public Lesson get(Long id) {

@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -64,8 +65,12 @@ class InstructorControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(content().string(containsString("11월 2일 월요일")))
 			.andExpect(content().string(containsString("김강사")))
-			.andExpect(content().string(containsString("010-1111-1111")))
-			.andExpect(content().string(containsString("총 1명 · 부족 7")))
+			// 연락처·기본 배치 비고(주황 글씨)는 시간표에서 빼고 강사 상세에서 봄
+			.andExpect(content().string(not(containsString("010-1111-1111"))))
+			.andExpect(content().string(not(containsString("오전 담당"))))
+			// 총 = 고정 1(김) + 조건부 1(이)
+			.andExpect(content().string(containsString("총 2명 · 부족 6")))
+			.andExpect(content().string(containsString("고정 1 · 조건부 1 · 결근 0")))
 			.andExpect(content().string(containsString("1시간 늦음")))
 			.andExpect(content().string(containsString("class=\"cond\">조<")));
 	}

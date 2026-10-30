@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-// 당일 상태 (휴식 / 외출 / 조퇴). 강사·날짜당 1행, [복귀] 시 행 삭제
+// 당일 상태 (조퇴). 강사·날짜당 1행, 조퇴 [취소] 시 행 삭제
 @Entity
 @Table(name = "instructor_day_status",
 	uniqueConstraints = @UniqueConstraint(name = "uq_day_status", columnNames = {"instructor_id", "status_date"}))
@@ -61,13 +61,6 @@ public class InstructorDayStatus extends BaseEntity {
 			LocalDateTime changedAt) {
 		this.instructor = instructor;
 		this.statusDate = statusDate;
-		this.status = status;
-		this.fromPeriod = fromPeriod;
-		this.changedAt = changedAt;
-	}
-
-	// 휴식 중 조퇴 등: 같은 행을 새 상태로 갱신
-	public void change(DayStatus status, int fromPeriod, LocalDateTime changedAt) {
 		this.status = status;
 		this.fromPeriod = fromPeriod;
 		this.changedAt = changedAt;

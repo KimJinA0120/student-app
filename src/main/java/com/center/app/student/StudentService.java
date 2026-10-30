@@ -13,6 +13,7 @@ import com.center.app.instructor.Instructor;
 import com.center.app.instructor.InstructorRepository;
 import com.center.app.lesson.Lesson;
 import com.center.app.lesson.LessonRepository;
+import com.center.app.lesson.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ public class StudentService {
 	private final StudentRepository studentRepository;
 	private final InstructorRepository instructorRepository;
 	private final LessonRepository lessonRepository;
+	private final ReservationService reservationService;
 
 	// 상세 화면의 수업 한 줄
 	public record LessonLine(Long lessonId, LocalDate date, int period, String instructorName) {
@@ -92,6 +94,7 @@ public class StudentService {
 		if (lessonRepository.countByStudentId(id) > 0) {
 			throw new IllegalArgumentException("수업 기록이 있는 수강생은 삭제할 수 없습니다. 수업 기록을 먼저 정리하세요.");
 		}
+		reservationService.removeStudent(student);
 		studentRepository.delete(student);
 	}
 

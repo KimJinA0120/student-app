@@ -2,7 +2,6 @@ package com.center.app.web;
 
 import java.time.LocalDate;
 
-import com.center.app.instructor.DayStatus;
 import com.center.app.instructor.InstructorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -12,34 +11,34 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-// 근무 중인 강사 패널의 휴식·외출·조퇴·[복귀] 버튼. 처리 후 보던 화면(back)으로 돌아감
-// ([추가]·[종료]·[취소]·[수업시작]은 LessonController)
+// 강사 시간표 칸의 [조퇴]·조퇴 [취소] 버튼. 처리 후 보던 화면(back)으로 돌아감
+// (칸의 [수업시작]·[추가]·[종료]·[취소]는 LessonController)
 @Controller
 @RequiredArgsConstructor
-public class PanelController {
+public class LeaveEarlyController {
 
 	private final InstructorService instructorService;
 
-	@PostMapping("/instructors/{id:\\d+}/day-status")
-	public String change(@PathVariable Long id, @RequestParam DayStatus status,
+	@PostMapping("/instructors/{id:\\d+}/leave-early")
+	public String leaveEarly(@PathVariable Long id,
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
 			@RequestParam Integer period, @RequestParam(required = false) String back, RedirectAttributes ra) {
 		String to = Urls.safeBack(back, "/instructors");
 		return Flash.handle(ra, to, () -> {
-			instructorService.changeDayStatus(id, date, status, period);
-			ra.addFlashAttribute("message", status.getLabel() + "(으)로 바꿨습니다.");
+			instructorService.leaveEarly(id, date, period);
+			ra.addFlashAttribute("message", "조퇴 처리했습니다. " + period + "교시 이후 근무에서 빠집니다.");
 			return to;
 		});
 	}
 
-	@PostMapping("/instructors/{id:\\d+}/day-status/return")
-	public String returnToWork(@PathVariable Long id,
+	@PostMapping("/instructors/{id:\\d+}/leave-early/cancel")
+	public String cancel(@PathVariable Long id,
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
 			@RequestParam(required = false) String back, RedirectAttributes ra) {
 		String to = Urls.safeBack(back, "/instructors");
 		return Flash.handle(ra, to, () -> {
-			instructorService.returnToWork(id, date);
-			ra.addFlashAttribute("message", "복귀했습니다.");
+			instructorService.cancelLeaveEarly(id, date);
+			ra.addFlashAttribute("message", "조퇴를 취소했습니다.");
 			return to;
 		});
 	}

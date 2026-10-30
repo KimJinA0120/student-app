@@ -22,7 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 // 강사 근무 계산
 // 확정(d, p) = 기본 배치 + 추가 배치 − 결근 − 조퇴(from_period < p)
-// 조건부(d, p) = CONDITIONAL 중 확정에 없는 강사 ("조" 표시, 인원 미포함)
+// 조건부(d, p) = CONDITIONAL 중 확정에 없고 조퇴하지 않은 강사 ("조" 표시)
+// 총 인원 = 확정 + 조건부 (부족 판정 기준)
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -126,9 +127,12 @@ public class InstructorScheduleService {
 		for (int p = PeriodUtil.FIRST; p <= PeriodUtil.LAST; p++) {
 			periods.add(calculatePeriod(date, p, instructors, overrides, statuses));
 		}
+		Map<Long, Integer> leaveEarly = statuses.values().stream()
+			.collect(Collectors.toMap(s -> s.getInstructor().getId(), InstructorDayStatus::getFromPeriod));
 		return new DaySchedule(date, periods,
 			notesOf(OverrideType.ABSENT, overrides, instructors),
-			notesOf(OverrideType.NOTE, overrides, instructors));
+			notesOf(OverrideType.NOTE, overrides, instructors),
+			leaveEarly);
 	}
 
 	private PeriodSchedule calculatePeriod(LocalDate date, int period, Map<Long, Instructor> instructors,
@@ -140,31 +144,42 @@ public class InstructorScheduleService {
 			for (InstructorSlot slot : instructor.getSlots()) {
 				if (slot.getDayOfWeek() == date.getDayOfWeek() && slot.getPeriod() == period) {
 					confirmed.put(instructor.getId(),
-						entry(instructor, slot.getRole(), slot.getNote(), statuses));
+						entry(instructor, slot.getRole(), slot.getNote()));
 				}
 			}
 		}
 		for (InstructorOverride o : ofType(overrides, OverrideType.EXTRA, date, period)) {
 			Instructor instructor = instructors.get(o.getInstructor().getId());
-			confirmed.putIfAbsent(instructor.getId(), entry(instructor, o.getRole(), o.getMemo(), statuses));
+			confirmed.putIfAbsent(instructor.getId(), entry(instructor, o.getRole(), o.getMemo()));
 		}
+		// 결근으로 빠진 강사는 머리 인원에 "결근 n"으로 따로 보여 줌
+		Map<Long, Entry> absent = new LinkedHashMap<>();
 		for (InstructorOverride o : ofType(overrides, OverrideType.ABSENT, date, period)) {
-			confirmed.remove(o.getInstructor().getId());
+			Entry removed = confirmed.remove(o.getInstructor().getId());
+			if (removed != null) {
+				absent.put(removed.instructorId(), removed);
+			}
 		}
-		confirmed.keySet().removeIf(id -> statuses.containsKey(id) && statuses.get(id).excludes(period));
+		Set<Long> leftEarly = statuses.entrySet().stream()
+			.filter(s -> s.getValue().excludes(period))
+			.map(Map.Entry::getKey)
+			.collect(Collectors.toSet());
+		confirmed.keySet().removeAll(leftEarly);
 
 		List<Entry> conditional = new ArrayList<>();
 		for (InstructorOverride o : ofType(overrides, OverrideType.CONDITIONAL, date, period)) {
 			Instructor instructor = instructors.get(o.getInstructor().getId());
-			if (!confirmed.containsKey(instructor.getId())) {
-				conditional.add(entry(instructor, o.getRole(), o.getMemo(), statuses));
+			if (!confirmed.containsKey(instructor.getId()) && !leftEarly.contains(instructor.getId())) {
+				conditional.add(entry(instructor, o.getRole(), o.getMemo()));
 			}
 		}
 
 		List<Entry> confirmedList = new ArrayList<>(confirmed.values());
 		confirmedList.sort(ENTRY_ORDER);
 		conditional.sort(Comparator.comparing(Entry::name));
-		return new PeriodSchedule(period, confirmedList, conditional, REQUIRED_PER_PERIOD);
+		List<Entry> absentList = new ArrayList<>(absent.values());
+		absentList.sort(Comparator.comparing(Entry::name));
+		return new PeriodSchedule(period, confirmedList, conditional, absentList, REQUIRED_PER_PERIOD);
 	}
 
 	private List<InstructorOverride> ofType(List<InstructorOverride> overrides, OverrideType type,
@@ -174,11 +189,8 @@ public class InstructorScheduleService {
 			.toList();
 	}
 
-	private Entry entry(Instructor instructor, InstructorRole role, String memo,
-			Map<Long, InstructorDayStatus> statuses) {
-		InstructorDayStatus status = statuses.get(instructor.getId());
-		return new Entry(instructor.getId(), instructor.getName(), instructor.getPhone(), role, memo,
-			status == null ? null : status.getStatus());
+	private Entry entry(Instructor instructor, InstructorRole role, String memo) {
+		return new Entry(instructor.getId(), instructor.getName(), instructor.getPhone(), role, memo);
 	}
 
 	private List<Note> notesOf(OverrideType type, List<InstructorOverride> overrides,

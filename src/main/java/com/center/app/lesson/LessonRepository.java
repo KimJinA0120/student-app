@@ -20,6 +20,12 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
 		where l.lessonDate = :date and l.period = :period""")
 	List<Lesson> findWithDetailsByDateAndPeriod(LocalDate date, int period);
 
+	// 강사 시간표: 하루치 수업 (교시 → 등록 순)
+	@Query("""
+		select distinct l from Lesson l join fetch l.instructor join fetch l.room left join fetch l.students
+		where l.lessonDate = :date order by l.period, l.id""")
+	List<Lesson> findWithDetailsByDate(LocalDate date);
+
 	@Query("""
 		select l from Lesson l join fetch l.instructor join fetch l.room left join fetch l.students
 		where l.id = :id""")

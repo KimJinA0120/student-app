@@ -114,28 +114,23 @@ public class InstructorService {
 		overrideRepository.delete(o);
 	}
 
-	// 휴식·외출·조퇴 (근무 중인 강사 패널의 버튼). 강사·날짜당 1행이라 이미 있으면 같은 행을 갱신 (휴식 중 조퇴 등)
-	public void changeDayStatus(Long instructorId, LocalDate date, DayStatus status, Integer fromPeriod) {
-		if (status == null || date == null || fromPeriod == null || !PeriodUtil.isValid(fromPeriod)) {
-			throw new IllegalArgumentException("상태·날짜·교시를 확인하세요.");
+	// 조퇴 (강사 시간표 칸의 버튼): fromPeriod 교시까지 근무하고 이후 교시에서 빠짐
+	public void leaveEarly(Long instructorId, LocalDate date, Integer fromPeriod) {
+		if (date == null || fromPeriod == null || !PeriodUtil.isValid(fromPeriod)) {
+			throw new IllegalArgumentException("날짜·교시를 확인하세요.");
 		}
 		Instructor instructor = find(instructorId);
-		LocalDateTime now = LocalDateTime.now(clock);
-		dayStatusRepository.findByInstructorIdAndStatusDate(instructorId, date).ifPresentOrElse(s -> {
-			if (s.getStatus() == DayStatus.LEAVE_EARLY) {
-				throw new IllegalArgumentException(instructor.getName() + " 강사님은 이미 조퇴 처리되었습니다.");
-			}
-			s.change(status, fromPeriod, now);
-		}, () -> dayStatusRepository.save(new InstructorDayStatus(instructor, date, status, fromPeriod, now)));
+		if (dayStatusRepository.findByInstructorIdAndStatusDate(instructorId, date).isPresent()) {
+			throw new IllegalArgumentException(instructor.getName() + " 강사님은 이미 조퇴 처리되었습니다.");
+		}
+		dayStatusRepository.save(new InstructorDayStatus(instructor, date, DayStatus.LEAVE_EARLY, fromPeriod,
+			LocalDateTime.now(clock)));
 	}
 
-	// [복귀]: 휴식·외출 행을 지움. 조퇴는 그날 남은 교시에서 빠지는 것이라 복귀 대상이 아님
-	public void returnToWork(Long instructorId, LocalDate date) {
+	// 조퇴 [취소]: 잘못 눌렀을 때 행을 지워 원래 근무로 되돌림
+	public void cancelLeaveEarly(Long instructorId, LocalDate date) {
 		InstructorDayStatus s = dayStatusRepository.findByInstructorIdAndStatusDate(instructorId, date)
-			.orElseThrow(() -> new IllegalArgumentException("휴식·외출 중이 아닙니다."));
-		if (s.getStatus() == DayStatus.LEAVE_EARLY) {
-			throw new IllegalArgumentException("조퇴한 강사는 복귀할 수 없습니다.");
-		}
+			.orElseThrow(() -> new IllegalArgumentException("조퇴 기록이 없습니다."));
 		dayStatusRepository.delete(s);
 	}
 

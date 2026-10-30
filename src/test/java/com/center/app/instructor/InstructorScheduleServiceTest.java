@@ -69,17 +69,20 @@ class InstructorScheduleServiceTest {
 	}
 
 	@Test
-	void 추가_배치는_더하고_결근은_해당_교시만_뺀다() {
+	void 추가_배치는_더하고_결근은_해당_교시만_빼서_따로_센다() {
 		save(override(park, OverrideType.EXTRA, MON, MON, Set.of(3), "그날만"));
 		save(override(kim, OverrideType.ABSENT, MON, MON, Set.of(2), "병원"));
+		save(override(park, OverrideType.ABSENT, MON, MON, Set.of(1), null)); // 원래 배치가 없으면 결근으로 세지 않음
 
 		DaySchedule mon = schedule(MON);
 
 		assertThat(names(mon.period(1).confirmed())).containsExactly("김강사", "이강사");
+		assertThat(mon.period(1).absent()).isEmpty();
 		assertThat(mon.period(2).confirmed()).isEmpty();
+		assertThat(names(mon.period(2).absent())).containsExactly("김강사");
 		assertThat(names(mon.period(3).confirmed())).containsExactly("박강사");
-		assertThat(mon.absences()).singleElement()
-			.satisfies(n -> assertThat(n.name()).isEqualTo("김강사"));
+		// 표 아래 "빠지는 강사" 목록에는 입력한 결근이 모두 나옴
+		assertThat(mon.absences()).extracting(DaySchedule.Note::name).containsExactly("김강사", "박강사");
 	}
 
 	@Test
@@ -93,13 +96,15 @@ class InstructorScheduleServiceTest {
 	}
 
 	@Test
-	void 조건부는_따로_표시하고_인원에_넣지_않는다() {
+	void 조건부는_따로_표시하고_총_인원에는_넣는다() {
 		save(override(park, OverrideType.CONDITIONAL, MON, MON, Set.of(), "11/16부터"));
 		save(override(kim, OverrideType.CONDITIONAL, MON, MON, Set.of(), null)); // 이미 확정이면 조건부에서 제외
 
 		PeriodSchedule p1 = schedule(MON).period(1);
 
-		assertThat(p1.count()).isEqualTo(2);
+		assertThat(p1.confirmed()).hasSize(2);
+		assertThat(p1.count()).isEqualTo(3); // 총 = 고정 2 + 조건부 1
+		assertThat(p1.shortage()).isEqualTo(5);
 		assertThat(names(p1.conditional())).containsExactly("박강사");
 		assertThat(p1.conditional().getFirst().memo()).isEqualTo("11/16부터");
 	}
@@ -108,14 +113,16 @@ class InstructorScheduleServiceTest {
 	void 조퇴하면_그_교시까지만_근무하고_이후_교시에서_빠진다() {
 		dayStatusRepository.save(new InstructorDayStatus(kim, MON, DayStatus.LEAVE_EARLY, 1,
 			LocalDateTime.of(MON, java.time.LocalTime.of(11, 0))));
+		save(override(kim, OverrideType.CONDITIONAL, MON, MON, Set.of(3), null)); // 조퇴 후엔 조건부로도 안 뜸
 		em.flush();
 		em.clear();
 
 		DaySchedule mon = schedule(MON);
 
-		assertThat(mon.period(1).confirmed()).filteredOn(e -> e.name().equals("김강사"))
-			.singleElement().extracting(Entry::dayStatus).isEqualTo(DayStatus.LEAVE_EARLY);
+		assertThat(names(mon.period(1).confirmed())).contains("김강사");
+		assertThat(mon.leaveEarly()).containsEntry(kim.getId(), 1);
 		assertThat(mon.period(2).confirmed()).isEmpty();
+		assertThat(mon.period(3).conditional()).isEmpty();
 		// 다음 날에는 영향 없음
 		assertThat(schedule(MON.plusDays(7)).period(2).confirmed()).hasSize(1);
 	}

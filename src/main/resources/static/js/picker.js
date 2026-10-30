@@ -1,5 +1,6 @@
 // 수강생 선택 목록: 이름으로 걸러 보기 + 선택한 이름 요약
-document.querySelectorAll('.picker').forEach(function (picker) {
+// 시간표의 예약 창처럼 나중에 끼워 넣은 목록은 initPicker(요소)로 따로 연결
+function initPicker(picker) {
 	var filter = picker.querySelector('.picker-filter');
 	var summary = picker.querySelector('.picker-summary');
 	var boxes = picker.querySelectorAll('input[type=checkbox]');
@@ -30,4 +31,6 @@ document.querySelectorAll('.picker').forEach(function (picker) {
 	});
 	picker.addEventListener('change', update);
 	update();
-});
+}
+
+document.querySelectorAll('.picker').forEach(initPicker);

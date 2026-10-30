@@ -8,7 +8,7 @@
 <main class="content">
 	<div th:replace="~{instructors/nav :: nav('calendar')}"></div>
 
-	<p class="muted" th:text="|숫자 = 확정 인원 (초록 ${required}명 이상, 주황 부족) · 노란 점선 = 조건부 (인원 미포함) · 날짜를 누르면 날짜별 보기|">설명</p>
+	<p class="muted" th:text="|숫자 = 출근 가능 인원(고정 + 조건부, 초록 ${required}명 이상, 주황 부족) · 노란 점선 = 조건부 · 날짜를 누르면 날짜별 보기|">설명</p>
 
 	<div class="cal">
 		<div class="cal-head" th:each="w : ${ {'월','화','수','목','금','토','일'} }" th:text="${w}">월</div>

@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 // 수업 기록: 목록(수업 기록 탭) / 기록 폼(새로·수정) / 삭제·종료·수강생 추가
-// 폼은 4가지 방법으로 열림 (상단 버튼 / 패널 [수업시작] / 수강생 목록 체크 / 수강생 상세) → 모두 GET /lessons/new + 미리 채울 값
+// 폼은 4가지 방법으로 열림 (상단 버튼 / 강사 시간표 칸 [수업시작] / 수강생 목록 체크 / 수강생 상세) → 모두 GET /lessons/new + 미리 채울 값
 @Controller
 @RequestMapping("/lessons")
 @RequiredArgsConstructor
@@ -130,7 +130,7 @@ public class LessonController {
 		}
 	}
 
-	// [취소](패널) / [삭제](수정 화면)
+	// [취소](강사 시간표 칸) / [삭제](수정 화면)
 	@PostMapping("/{id:\\d+}/delete")
 	public String delete(@PathVariable Long id, @RequestParam(required = false) String back, RedirectAttributes ra) {
 		String to = Urls.safeBack(back, "/lessons");
@@ -141,7 +141,7 @@ public class LessonController {
 		});
 	}
 
-	// [종료](패널): 종료 시각 = 지금
+	// [종료](강사 시간표 칸): 종료 시각 = 지금
 	@PostMapping("/{id:\\d+}/end")
 	public String end(@PathVariable Long id, @RequestParam(required = false) String back, RedirectAttributes ra) {
 		String to = Urls.safeBack(back, "/lessons");
@@ -152,7 +152,7 @@ public class LessonController {
 		});
 	}
 
-	// [추가](패널): 진행 중 수업에 수강생 추가
+	// [추가](강사 시간표 칸): 수업에 수강생 추가
 	@GetMapping("/{id:\\d+}/students")
 	public String addStudentsForm(@PathVariable Long id, @RequestParam(required = false) String back, Model model) {
 		Lesson lesson = lessonService.get(id);
@@ -224,7 +224,7 @@ public class LessonController {
 		for (InstructorLine i : board.instructors()) {
 			String label = i.name()
 				+ (i.conditional() ? " (조)" : "")
-				+ (i.status() != null ? " · " + i.status().getLabel() : "")
+				+ (i.leftEarly() ? " · 조퇴" : "")
 				+ (i.busy() ? " · 수업 중 " + i.lesson().roomName() : "");
 			options.add(new Option(i.instructorId(), i.name(), label, i.busy(), i.free()));
 		}

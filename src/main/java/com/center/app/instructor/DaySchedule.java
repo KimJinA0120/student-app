@@ -2,6 +2,7 @@ package com.center.app.instructor;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -11,22 +12,25 @@ public record DaySchedule(
 	LocalDate date,
 	List<PeriodSchedule> periods,  // 1~4교시 순서
 	List<Note> absences,           // 그날 빠지는 강사 (결근)
-	List<Note> notes               // 그날 메모
+	List<Note> notes,              // 그날 메모
+	Map<Long, Integer> leaveEarly  // 조퇴한 강사 id → 조퇴를 누른 교시 (그 교시까지 근무)
 ) {
 
 	public PeriodSchedule period(int period) {
 		return periods.get(period - 1);
 	}
 
+	// 총 인원 = 그 교시에 출근 가능한 인원 = 고정(확정) + 조건부. 부족 판정도 총 인원 기준
 	public record PeriodSchedule(
 		int period,
-		List<Entry> confirmed,    // 확정 근무 (인원수에 포함)
-		List<Entry> conditional,  // 조건부 "조" (인원수 미포함)
+		List<Entry> confirmed,    // 고정: 확정 근무 (결근 반영 후)
+		List<Entry> conditional,  // 조건부 "조"
+		List<Entry> absent,       // 결근: 기본·추가 배치에 있었지만 그날 결근으로 빠진 강사
 		int required              // 부족 기준 인원
 	) {
 
 		public int count() {
-			return confirmed.size();
+			return confirmed.size() + conditional.size();
 		}
 
 		public boolean isShort() {
@@ -43,8 +47,7 @@ public record DaySchedule(
 		String name,
 		String phone,
 		InstructorRole role,  // 추가 배치에 역할이 없으면 null
-		String memo,          // 기본 배치 비고 또는 예외 메모
-		DayStatus dayStatus   // 그날 휴식·외출·조퇴 상태, 없으면 null
+		String memo           // 기본 배치 비고 또는 예외 메모
 	) {
 	}
 

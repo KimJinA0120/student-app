@@ -4,7 +4,6 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 
-import com.center.app.instructor.DayStatus;
 import com.center.app.instructor.InstructorRole;
 
 // 한 기준 시점(날짜·교시·시각)의 근무 강사·진행 중 수업·교실 사용 현황 (저장하지 않고 조회할 때마다 계산)
@@ -29,7 +28,7 @@ public record PeriodBoard(
 		InstructorRole role,  // 역할 없으면 null
 		boolean conditional,  // 조건부 "조"
 		boolean scheduled,    // 배치표에 있는지 (false = 배치 밖이지만 수업 중)
-		DayStatus status,     // 휴식·외출·조퇴, 없으면 null
+		boolean leftEarly,    // 이 교시에 조퇴 처리됨 (이 교시까지 근무지만 새 수업은 맡기지 않음)
 		LessonInfo lesson     // 진행 중 수업, 없으면 null
 	) {
 
@@ -37,9 +36,9 @@ public record PeriodBoard(
 			return lesson != null;
 		}
 
-		// 지금 수업을 맡길 수 있는 강사 (수업 중도 아니고 휴식·외출·조퇴도 아님)
+		// 지금 수업을 맡길 수 있는 강사 (수업 중도 아니고 조퇴도 아님)
 		public boolean free() {
-			return lesson == null && status == null;
+			return lesson == null && !leftEarly;
 		}
 	}
 
@@ -57,9 +56,5 @@ public record PeriodBoard(
 
 	public InstructorLine instructor(Long instructorId) {
 		return instructors.stream().filter(i -> Objects.equals(i.instructorId(), instructorId)).findFirst().orElse(null);
-	}
-
-	public long workingCount() {
-		return instructors.stream().filter(i -> i.scheduled() && !i.conditional()).count();
 	}
 }

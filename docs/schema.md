@@ -16,6 +16,7 @@
 - `date`, `no` 같은 이름은 H2 예약어 충돌 위험이 있어 쓰지 않는다 → `lesson_date`, `status_date` 등으로 명명.
 - 근무 인원, 진행 중 수업, 빈 교실, 방문 회차 등 **계산 값은 저장하지 않는다** (조회 시 Java에서 계산).
 - 동시성 검사(같은 강사·교실 중복 수업)는 DB 제약이 아니라 **서비스 계층에서 검증**한다. 같은 교시 안에서도 수업이 중간 종료 후 새로 시작될 수 있기 때문.
+- 예약 동시 수정: 메모 예약은 화면에 보였던 글(`original`)과 DB 글을 비교해 그 사이 바뀌었으면 저장을 막는다(버전 컬럼 없음). 예약 쓰기 요청은 `ReservationController`의 `synchronized`로 하나씩 처리한다(미배정은 `instructor_id`가 NULL이라 UNIQUE가 막지 못함). 강사 시간표는 1분마다 자동으로 새로 불러온다(입력 중이면 미룸).
 
 ---
 
@@ -47,7 +48,7 @@ erDiagram
 | `RoomType` | `NORMAL`, `COUNSEL`, `STORAGE` | 일반 / 상담실 / 창고 겸용 |
 | `InstructorRole` | `MAIN`, `ASSIST` | 주 / 보조 (표시용) |
 | `OverrideType` | `ABSENT`, `CONDITIONAL`, `EXTRA`, `NOTE` | 결근 / 조건부 / 추가 배치 / 메모 |
-| `DayStatus` | `BREAK`, `OUT`, `LEAVE_EARLY` | 휴식 / 외출 / 조퇴 |
+| `DayStatus` | `LEAVE_EARLY` | 조퇴 (`BREAK`·`OUT`은 10/29에 없앰) |
 | `ManagerExceptionType` | `DAY_OFF`, `TIME_CHANGE` | 휴무 / 시간 변경 |
 
 ---
@@ -118,7 +119,7 @@ CREATE TABLE instructor_override (
 );
 CREATE INDEX idx_override_range ON instructor_override(start_date, end_date);
 
--- 당일 상태 (휴식 / 외출 / 조퇴)
+-- 당일 상태 (조퇴)
 CREATE TABLE instructor_day_status (
   id             BIGINT AUTO_INCREMENT PRIMARY KEY,
   instructor_id  BIGINT       NOT NULL REFERENCES instructor(id) ON DELETE CASCADE,
@@ -134,7 +135,7 @@ CREATE TABLE instructor_day_status (
 
 - `periods`는 `AttributeConverter<Set<Integer>, String>`으로 `Set<Integer>` ↔ `"1,3"` 변환. NULL/빈 Set = 전 교시.
 - 조건부의 "해당 날짜 목록"이 띄엄띄엄이면 날짜마다 행을 따로 만든다 (기간이 연속이면 한 행).
-- `instructor_day_status`는 강사·날짜당 1행. 휴식·외출 [복귀] → 행 삭제. 휴식 중 조퇴 → 같은 행을 `LEAVE_EARLY`로 갱신.
+- `instructor_day_status`는 강사·날짜당 1행. 조퇴 [취소] → 행 삭제.
 - 조퇴: `from_period` 교시까지는 "조퇴" 표시, `from_period`보다 큰 교시는 근무에서 제외.
 
 ### 4-3. 수강생
@@ -234,6 +235,44 @@ CREATE TABLE manager_exception (
 );
 ```
 
+### 4-5-1. 예약 (10/29 추가)
+
+```sql
+-- 강사 시간표 칸(강사·날짜·교시)에 미리 적어 두는 한 줄 ("김철수, 이영희" / "3명"). 등록 수강생은 reservation_student로 따로 연결
+CREATE TABLE reservation (
+  id                BIGINT AUTO_INCREMENT PRIMARY KEY,
+  instructor_id     BIGINT        REFERENCES instructor(id) ON DELETE CASCADE,  -- NULL = 미배정
+  reservation_date  DATE          NOT NULL,
+  period            INT           NOT NULL CHECK (period BETWEEN 1 AND 4),
+  content           VARCHAR(100)  NOT NULL,
+  created_at        TIMESTAMP     NOT NULL,
+  updated_at        TIMESTAMP     NOT NULL,
+  CONSTRAINT uq_reservation UNIQUE (instructor_id, reservation_date, period)
+);
+```
+
+- 칸마다 1행. 저장하면 덮어쓰고, 빈 값으로 저장하면 행 삭제.
+- 새로 적기·고치기는 근무 칸(확정·조건부)에서만 (서비스에서 검사). 삭제는 근무가 빠진 칸에서도 가능.
+- 그 칸에 `lesson`이 있으면 화면에서 숨김 (행은 남김). 방문 회차에 포함하지 않음.
+- `instructor_id`가 NULL이면 **미배정 예약** (강사 없이 날짜·교시만 정한 수강생). 날짜·교시당 1행 — H2 UNIQUE는 NULL끼리 중복으로 보지 않아 서비스에서 검사. 근무 검사 없음, 수업 기록이 생겨도 숨기지 않음.
+- 배정 = `instructor_id`를 채움 (그 교시 근무 강사만). 그 강사 칸에 이미 예약이 있으면 내용을 ", "로 이어 붙이고 미배정 행은 삭제.
+
+```sql
+-- 예약에 고른 등록 수강생 (10/30 추가, 강사 칸·미배정 모두). [수업시작] 폼에 미리 체크
+CREATE TABLE reservation_student (
+  reservation_id  BIGINT NOT NULL REFERENCES reservation(id),
+  student_id      BIGINT NOT NULL REFERENCES student(id),
+  PRIMARY KEY (reservation_id, student_id)
+);
+CREATE INDEX idx_reservation_student_student ON reservation_student(student_id);
+```
+
+- 화면 명칭: `content` = **메모 예약**, `reservation_student` = **예약**.
+- 글(`content`)은 미등록·이름 모르는 수강생용으로 그대로 둠. 수강생만 고르고 글이 없으면 `content = ''`.
+- 글을 비워도 고른 수강생이 있으면 행은 남김. 글·수강생이 모두 비면 행 삭제. [삭제] 버튼은 둘 다 지움.
+- 수강생을 삭제하면 그 수강생을 고른 예약에서 먼저 뺌 (서비스에서).
+- 배정 시 강사 칸에 이미 행이 있으면 수강생은 합침.
+
 ### 4-6. 확인 필요
 
 ```sql
@@ -267,11 +306,12 @@ CREATE TABLE check_item (
 
 - **현재 교시**: 09:30~12:00=1, 12:00~15:30=2(쉬는 시간 포함), 15:30~18:00=3, 18:00 이후=4. 09:30 이전은 1.
 - **확정 근무(d, p)** = `instructor_slot(d의 요일, p)` ∪ `EXTRA(d, p)` − `ABSENT(d, p)` − 조퇴(`from_period < p`)
-- **조건부(d, p)** = `CONDITIONAL(d, p)` — "조" 표시, 인원 미포함
+- **조건부(d, p)** = `CONDITIONAL(d, p)` − 확정 − 조퇴 — "조" 표시
+- **총 인원(d, p)** = 확정 + 조건부 (그 교시 출근 가능 인원). 결근 = `ABSENT(d, p)`로 확정에서 빠진 강사, 따로 표시
 - **진행 중 수업(d, p, 기준 시각 t)** = `lesson(d, p)` 중 `t < coalesce(end_time, 교시 종료)`
 - **빈 교실** = 진행 중 수업이 쓰지 않는 `room` 중 `sort_order` 첫 번째
 - **방문 회차** = 수강생별 `lesson_student` 행 수
-- **부족 표시** = 확정 인원 < 8 → 주황, "부족 (8 − n)"
+- **부족 표시** = 총 인원 < 8 → 주황, "부족 (8 − n)"
 
 수백 건 규모라 날짜 범위로 조회한 뒤 Java에서 필터링한다.
 
@@ -285,7 +325,7 @@ com.center.app
  ├─ room/          Room, RoomType, RoomRepository
  ├─ instructor/    Instructor, InstructorSlot, InstructorOverride, InstructorDayStatus, enums, repos, service
  ├─ student/       Student, StudentRepository, StudentService
- ├─ lesson/        Lesson, LessonRepository, LessonService
+ ├─ lesson/        Lesson, LessonRepository, LessonService, Reservation(예약), ReservationService
  ├─ manager/       Manager, ManagerShift, ManagerException, repos, service
  ├─ checkitem/     CheckItem, CheckItemRepository
  └─ web/           컨트롤러 + Thymeleaf 템플릿

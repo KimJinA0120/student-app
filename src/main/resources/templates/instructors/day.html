@@ -22,7 +22,8 @@
 
 	<h2 class="day-title" th:text="${#temporals.format(date, 'M월 d일 EEEE')}">11월 2일 월요일</h2>
 
-	<table class="schedule">
+	<!-- 강사 × 교시 시간표. 칸 = 그 강사·교시의 수업 기록 + 버튼. 근무 없는 칸은 회색(입력 불가) -->
+	<table class="schedule timetable">
 		<thead>
 		<tr>
 			<th class="name-col">강사</th>
@@ -31,20 +32,140 @@
 					<span class="muted" th:text="${periodTimes[p.period() - 1]}">09:30~12:00</span></div>
 				<span class="pill" th:classappend="${p.isShort()} ? 'warn' : 'ok'"
 				      th:text="${p.isShort()} ? |총 ${p.count()}명 · 부족 ${p.shortage()}| : |총 ${p.count()}명|">총 6명 · 부족 2</span>
+				<div class="head-count muted"
+				     th:text="|고정 ${p.confirmed().size()} · 조건부 ${p.conditional().size()} · 결근 ${p.absent().size()}|">고정 5 · 조건부 1 · 결근 2</div>
 			</th>
 		</tr>
 		</thead>
 		<tbody>
+		<!-- 미배정: 강사 없이 날짜·교시만 정한 예약·메모 예약. [배정]하면 그 강사 칸으로 옮김 -->
+		<tr class="unassigned-row">
+			<td class="name-col"><b>미배정</b> <small class="muted">예약</small></td>
+			<td th:each="u : ${unassigned}" class="slot on">
+				<!-- 예약: 누르면 예약 수강생 창 -->
+				<a class="reserve-input" th:if="${u.editable()}" th:classappend="${!u.reservedStudents().isEmpty()} ? 'filled'"
+				   th:href="@{/reservations/students(date=${date}, period=${u.period()}, back=${currentUrl})}"
+				   th:text="${u.reservedStudents().isEmpty()} ? '예약 (강사 미정)' : '예약: ' + ${u.reservedStudentNames()}">예약 (강사 미정)</a>
+				<div class="reserve-left" th:if="${!u.editable() and u.hasReservation()}">
+					<span th:unless="${u.reservedStudents().isEmpty()}" th:text="'예약: ' + ${u.reservedStudentNames()}">예약: 김철수</span>
+					<span th:if="${u.reservation() != null}" th:text="'메모: ' + ${u.reservation()}">메모: 박민수(첫 방문)</span>
+					<form th:action="@{/reservations/delete}" method="post">
+						<input type="hidden" name="date" th:value="${date}">
+						<input type="hidden" name="period" th:value="${u.period()}">
+						<input type="hidden" name="back" th:value="${currentUrl}">
+						<button class="btn-x" type="submit" onclick="return confirm('예약과 메모를 지울까요?')">삭제</button>
+					</form>
+				</div>
+				<div class="slot-acts" th:if="${u.editable() and u.hasReservation()}">
+					<form th:action="@{/reservations/assign}" method="post">
+						<input type="hidden" name="date" th:value="${date}">
+						<input type="hidden" name="period" th:value="${u.period()}">
+						<input type="hidden" name="back" th:value="${currentUrl}">
+						<select name="instructorId" aria-label="배정할 강사" required>
+							<option value="">강사 선택</option>
+							<option th:each="e : ${u.candidates()}" th:value="${e.instructorId()}" th:text="${e.name()}">김강사</option>
+						</select>
+						<button class="btn btn-sm" type="submit">배정</button>
+					</form>
+					<form th:action="@{/reservations/delete}" method="post">
+						<input type="hidden" name="date" th:value="${date}">
+						<input type="hidden" name="period" th:value="${u.period()}">
+						<input type="hidden" name="back" th:value="${currentUrl}">
+						<button class="btn btn-sm btn-quiet" type="submit" onclick="return confirm('예약과 메모를 지울까요?')">삭제</button>
+					</form>
+				</div>
+				<!-- 메모 예약: Enter로 저장, 비우면 메모만 삭제 -->
+				<form class="reserve-form" th:if="${u.editable()}" th:action="@{/reservations}" method="post">
+					<input type="hidden" name="date" th:value="${date}">
+					<input type="hidden" name="period" th:value="${u.period()}">
+					<input type="hidden" name="back" th:value="${currentUrl}">
+					<!-- 화면을 열 때 보였던 글: 그 사이 다른 분이 고쳤으면 서버가 덮어쓰지 않고 알려 줌 -->
+					<input type="hidden" name="original" th:value="${u.reservation()}">
+					<input type="text" name="content" maxlength="100" th:value="${u.reservation()}"
+					       placeholder="메모" aria-label="미배정 메모 예약" th:classappend="${u.reservation() != null} ? 'filled'">
+				</form>
+			</td>
+		</tr>
 		<tr th:each="r : ${rows}">
 			<td class="name-col">
 				<a class="name-link" th:href="@{/instructors/{id}(id=${r.instructorId()})}"><b th:text="${r.name()}">홍길동</b></a>
 				<small class="muted" th:text="${r.roles()}">주</small>
-				<a class="tel" th:if="${r.phone() != null}" th:href="|tel:${r.tel()}|" th:text="${r.phone()}">010-0000-0000</a>
-				<div class="memo" th:if="${r.memo() != null}" th:text="${r.memo()}">메모</div>
 			</td>
-			<td th:each="m : ${r.marks()}" class="mark">
-				<span th:if="${m.name() == 'CONFIRMED'}" class="dot">●</span>
-				<span th:if="${m.name() == 'CONDITIONAL'}" class="cond">조</span>
+			<td th:each="c : ${r.cells()}" class="slot"
+			    th:classappend="${c.mark().name() == 'CONFIRMED'} ? 'on' : (${c.mark().name() == 'CONDITIONAL'} ? 'cond-slot' : 'off')">
+				<span class="cond" th:if="${c.mark().name() == 'CONDITIONAL'}">조</span>
+				<span class="muted" th:if="${c.mark().name() == 'LEFT'}">조퇴</span>
+
+				<!-- 예약: 누르면 예약 수강생 창 (고른 수강생은 [수업시작] 폼에 미리 체크)
+				     근무가 빠진 칸·지난 칸이면 예약·메모 글 + [삭제] -->
+				<a class="reserve-input" th:if="${c.canReserve()}" th:classappend="${!c.reservedStudents().isEmpty()} ? 'filled'"
+				   th:href="@{/reservations/students(instructorId=${r.instructorId()}, date=${date}, period=${c.period()}, back=${currentUrl})}"
+				   th:text="${c.reservedStudents().isEmpty()} ? '예약' : '예약: ' + ${c.reservedStudentNames()}">예약</a>
+				<div class="reserve-left" th:if="${!c.canReserve() and c.hasReservation()}">
+					<span th:unless="${c.reservedStudents().isEmpty()}" th:text="'예약: ' + ${c.reservedStudentNames()}">예약: 이영희</span>
+					<span th:if="${c.reservation() != null}" th:text="'메모: ' + ${c.reservation()}">메모: 김철수</span>
+					<small class="leave-state" th:unless="${c.available()}">근무 없음 · 확인 필요</small>
+					<form th:action="@{/reservations/delete}" method="post">
+						<input type="hidden" name="instructorId" th:value="${r.instructorId()}">
+						<input type="hidden" name="date" th:value="${date}">
+						<input type="hidden" name="period" th:value="${c.period()}">
+						<input type="hidden" name="back" th:value="${currentUrl}">
+						<button class="btn-x" type="submit" onclick="return confirm('예약과 메모를 지울까요?')">삭제</button>
+					</form>
+				</div>
+
+				<!-- 그 칸의 수업: 강의실 · 수강생 (누르면 수정), [추가] [종료] [취소] -->
+				<div class="lesson-chip" th:each="l : ${c.lessons()}" th:classappend="${l.ongoing()} ? 'ongoing'">
+					<a th:href="@{/lessons/{id}/edit(id=${l.lessonId()}, back=${currentUrl})}">
+						<b th:text="${l.roomName()}">203호</b>
+						<span th:text="${#strings.listJoin(l.studentNames(), ', ')}">김수강, 이수강</span>
+					</a>
+					<small class="muted" th:if="${l.timeText() != null}" th:text="${l.timeText()}">13:30~14:20</small>
+					<div class="chip-acts">
+						<a class="btn btn-sm" th:href="@{/lessons/{id}/students(id=${l.lessonId()}, back=${currentUrl})}">추가</a>
+						<form th:if="${l.ongoing()}" th:action="@{/lessons/{id}/end(id=${l.lessonId()})}" method="post">
+							<input type="hidden" name="back" th:value="${currentUrl}">
+							<button class="btn btn-sm" type="submit">종료</button>
+						</form>
+						<form th:action="@{/lessons/{id}/delete(id=${l.lessonId()})}" method="post"
+						      th:data-name="${r.name()}" onsubmit="return confirm(this.dataset.name + ' 강사님 수업을 취소(삭제)할까요?')">
+							<input type="hidden" name="back" th:value="${currentUrl}">
+							<button class="btn btn-sm btn-danger" type="submit">취소</button>
+						</form>
+					</div>
+				</div>
+
+				<div class="slot-acts" th:if="${c.canStart() or c.canLeave() or c.leaveHere()}">
+					<a class="btn btn-sm btn-primary" th:if="${c.canStart()}"
+					   th:href="@{/lessons/new(instructorId=${r.instructorId()}, date=${date}, period=${c.period()}, studentIds=${c.reservedStudentIds()}, back=${currentUrl})}">수업시작</a>
+					<form th:if="${c.canLeave()}" th:action="@{/instructors/{id}/leave-early(id=${r.instructorId()})}" method="post">
+						<input type="hidden" name="date" th:value="${date}">
+						<input type="hidden" name="period" th:value="${c.period()}">
+						<input type="hidden" name="back" th:value="${currentUrl}">
+						<button class="btn btn-sm btn-quiet" type="submit" th:data-name="${r.name()}" th:data-period="${c.period()}"
+						        onclick="return confirm(this.dataset.name + ' 강사님을 ' + this.dataset.period + '교시까지 근무 후 조퇴 처리할까요?')">조퇴</button>
+					</form>
+					<th:block th:if="${c.leaveHere()}">
+						<span class="leave-state">조퇴</span>
+						<form th:action="@{/instructors/{id}/leave-early/cancel(id=${r.instructorId()})}" method="post">
+							<input type="hidden" name="date" th:value="${date}">
+							<input type="hidden" name="back" th:value="${currentUrl}">
+							<button class="btn btn-sm" type="submit">취소</button>
+						</form>
+					</th:block>
+				</div>
+
+				<!-- 메모 예약: 미등록·이름 모르는 수강생용 자유 글. Enter로 저장, 비우면 메모만 삭제 -->
+				<form class="reserve-form" th:if="${c.canReserve()}" th:action="@{/reservations}" method="post">
+					<input type="hidden" name="instructorId" th:value="${r.instructorId()}">
+					<input type="hidden" name="date" th:value="${date}">
+					<input type="hidden" name="period" th:value="${c.period()}">
+					<input type="hidden" name="back" th:value="${currentUrl}">
+					<!-- 화면을 열 때 보였던 글: 그 사이 다른 분이 고쳤으면 서버가 덮어쓰지 않고 알려 줌 -->
+					<input type="hidden" name="original" th:value="${c.reservation()}">
+					<input type="text" name="content" maxlength="100" th:value="${c.reservation()}"
+					       placeholder="메모" aria-label="메모 예약" th:classappend="${c.reservation() != null} ? 'filled'">
+				</form>
 			</td>
 		</tr>
 		<tr th:if="${rows.isEmpty()}">
@@ -76,6 +197,12 @@
 			</ul>
 		</div>
 	</section>
+
+	<!-- 예약 수강생 창: 예약 칸을 누르면 reserve-modal.js가 내용을 채워 띄움 -->
+	<dialog id="reserve-modal" class="modal"></dialog>
+	<script th:src="@{/js/picker.js}"></script>
+	<script th:src="@{/js/reserve-modal.js}"></script>
+	<script th:src="@{/js/auto-refresh.js}"></script>
 </main>
 </body>
 </html>

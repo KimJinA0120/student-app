@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::main})}">
+<head>
+	<title>예약 수강생 - 수강생 관리</title>
+</head>
+<body>
+<main class="content">
+	<!-- panel = 시간표의 큰 창(dialog) 안에 들어가는 부분. 이 화면 단독으로 열 때도 같은 내용 -->
+	<div th:fragment="panel" class="reserve-panel">
+		<h2 class="day-title">예약 수강생</h2>
+		<p>
+			<b th:text="${instructorName != null} ? ${instructorName} + ' 강사님' : '미배정'">김강사 강사님</b> ·
+			<span th:text="${#temporals.format(date, 'M/d (E)')} + ' ' + ${period} + '교시'">11/2 (월) 1교시</span>
+			<th:block th:if="${!content.isEmpty()}"><br><span class="muted" th:text="'메모: ' + ${content}">메모: 3명</span></th:block>
+			<br><small class="muted">등록된 수강생만 고를 수 있습니다. 미등록·이름 모르는 수강생은 칸의 메모에 적으세요. 고른 수강생은 [수업시작] 폼에 미리 체크됩니다.</small>
+		</p>
+		<form class="stack-form" th:action="@{/reservations/students}" method="post">
+			<input type="hidden" name="instructorId" th:if="${instructorId != null}" th:value="${instructorId}">
+			<input type="hidden" name="date" th:value="${date}">
+			<input type="hidden" name="period" th:value="${period}">
+			<input type="hidden" name="back" th:value="${back}">
+			<div th:replace="~{lessons/picker :: picker(${students}, ${selectedIds})}"></div>
+			<div class="form-actions">
+				<button class="btn btn-primary" type="submit">저장</button>
+				<a class="btn" th:href="${back}" data-modal-close>취소</a>
+			</div>
+		</form>
+	</div>
+	<script th:src="@{/js/picker.js}"></script>
+</main>
+</body>
+</html>

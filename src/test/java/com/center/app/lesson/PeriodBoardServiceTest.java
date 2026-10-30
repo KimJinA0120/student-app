@@ -63,7 +63,6 @@ class PeriodBoardServiceTest {
 		assertThat(kim.lesson().studentCount()).isEqualTo(2);
 		assertThat(board.instructor(d.lee.getId()).free()).isTrue();
 		assertThat(board.instructor(d.choi.getId()).scheduled()).isFalse();
-		assertThat(board.workingCount()).isEqualTo(2);
 		// 203호·204호 사용 중 → 205호 자동 배정
 		assertThat(board.firstFreeRoomId()).isEqualTo(d.rooms.get(2).getId());
 		assertThat(board.past()).isFalse();
@@ -84,15 +83,15 @@ class PeriodBoardServiceTest {
 	}
 
 	@Test
-	void 휴식은_시작한_교시부터_보이고_조퇴하면_다음_교시에서_빠진다() {
-		dayStatusRepository.save(new InstructorDayStatus(d.lee, MON, DayStatus.BREAK, 2, LocalDateTime.now()));
+	void 조퇴한_교시에는_조퇴로_보이고_다음_교시에서_빠진다() {
+		dayStatusRepository.save(new InstructorDayStatus(d.lee, MON, DayStatus.LEAVE_EARLY, 2, LocalDateTime.now()));
 		dayStatusRepository.save(new InstructorDayStatus(d.kim, MON, DayStatus.LEAVE_EARLY, 1, LocalDateTime.now()));
 
 		PeriodBoard board = service.board(at(2, LocalTime.of(14, 0)));
 
 		assertThat(board.instructor(d.kim.getId())).isNull();
 		InstructorLine lee = board.instructor(d.lee.getId());
-		assertThat(lee.status()).isEqualTo(DayStatus.BREAK);
+		assertThat(lee.leftEarly()).isTrue();
 		assertThat(lee.free()).isFalse();
 	}
 

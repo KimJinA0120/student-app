@@ -16,7 +16,6 @@
 		<strong class="brand">안양 상설센터</strong>
 		<a class="btn btn-primary" th:href="@{/lessons/new(back=${currentUrl})}">수업 기록</a>
 	</div>
-	<section th:replace="~{fragments/panel :: panel}"></section>
 	<nav class="tabs">
 		<a th:href="@{/instructors}" th:classappend="${activeTab == 'instructors'} ? 'active'">강사</a>
 		<a th:href="@{/students}" th:classappend="${activeTab == 'students'} ? 'active'">수강생</a>
